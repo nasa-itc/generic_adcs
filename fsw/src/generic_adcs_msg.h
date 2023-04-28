@@ -40,4 +40,20 @@ typedef struct
 } OS_PACK Generic_ADCS_Hk_tlm_t;
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof ( Generic_ADCS_Hk_tlm_t )
 
+typedef struct
+{
+    double bvb[3];
+} OS_PACK Generic_ADCS_DI_Mag_Tlm_Payload_t;
+
+typedef struct
+{
+    Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
+} OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
+
+typedef struct
+{
+    uint8                         TlmHeader[CFE_SB_TLM_HDR_SIZE];
+    Generic_ADCS_DI_Tlm_Payload_t Payload;
+} OS_PACK Generic_ADCS_DI_Tlm_t;
+
 #endif

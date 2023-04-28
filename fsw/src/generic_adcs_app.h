@@ -30,6 +30,7 @@ typedef struct
     ** Each app defines its own packet which contains its OWN telemetry
     */
     Generic_ADCS_Hk_tlm_t   HkTelemetryPkt;   /* GENERIC_ADCS Housekeeping Telemetry Packet */
+    Generic_ADCS_DI_Tlm_t   DIPacket;
     
     /*
     ** Operational data  - not reported in housekeeping

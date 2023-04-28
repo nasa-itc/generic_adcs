@@ -11,7 +11,11 @@
 #include "generic_adcs_events.h"
 #include "generic_adcs_msgids.h"
 #include "generic_adcs_version.h"
+#include "generic_adcs_ingest.h"
 #include "generic_adcs_app.h"
+
+// ADCS sensor messages
+#include "generic_mag_msgids.h"
 
 /*
 ** Global Data
@@ -182,6 +186,16 @@ static int32 Generic_ADCS_AppInit(void)
     */
     Generic_ADCS_ResetCounters();
 
+    /*
+    ** Subscribe to ADCS packets from the sensors
+    */
+    status = CFE_SB_Subscribe(GENERIC_MAG_DEVICE_TLM_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_MAG_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
+
     /* 
      ** Send an information event that the app has initialized. 
      ** This is useful for debugging the loading of individual applications.
@@ -219,6 +233,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
         */
         case GENERIC_ADCS_REQ_HK_MID:
             Generic_ADCS_ProcessTelemetryRequest();
+            break;
+
+        case GENERIC_MAG_DEVICE_TLM_MID:
+            ingest_generic_mag(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Mag);
             break;
 
         /*
