@@ -31,6 +31,7 @@ typedef struct
     */
     Generic_ADCS_Hk_tlm_t   HkTelemetryPkt;   /* GENERIC_ADCS Housekeeping Telemetry Packet */
     Generic_ADCS_DI_Tlm_t   DIPacket;
+    Generic_ADCS_AD_Tlm_t   ADPacket;
     
     /*
     ** Operational data  - not reported in housekeeping

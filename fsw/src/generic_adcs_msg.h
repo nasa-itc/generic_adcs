@@ -14,6 +14,7 @@
 #define GENERIC_ADCS_NOOP_CC                 0
 #define GENERIC_ADCS_RESET_COUNTERS_CC       1
 #define GENERIC_ADCS_SEND_DI_CMD_CC          2
+#define GENERIC_ADCS_SEND_AD_CMD_CC          3
 
 /* 
 ** Telemetry Request Command Codes
@@ -41,6 +42,9 @@ typedef struct
 } OS_PACK Generic_ADCS_Hk_tlm_t;
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof ( Generic_ADCS_Hk_tlm_t )
 
+/*
+** Generic_ADCS DI type definition
+*/
 typedef struct
 {
     double bvb[3];
@@ -57,5 +61,25 @@ typedef struct
     Generic_ADCS_DI_Tlm_Payload_t Payload;
 } OS_PACK Generic_ADCS_DI_Tlm_t;
 #define GENERIC_ADCS_DI_LNGTH sizeof ( Generic_ADCS_DI_Tlm_t )
+
+/*
+** Generic_ADCS AD type definition
+*/
+typedef struct 
+{
+    double bvb[3];
+} OS_PACK Generic_ADCS_AD_Mag_Tlm_Payload_t;
+
+typedef struct
+{
+    Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
+} OS_PACK Generic_ADCS_AD_Tlm_Payload_t;
+
+typedef struct
+{
+    uint8                         TlmHeader[CFE_SB_TLM_HDR_SIZE];
+    Generic_ADCS_AD_Tlm_Payload_t Payload;
+} OS_PACK Generic_ADCS_AD_Tlm_t;
+#define GENERIC_ADCS_AD_LNGTH sizeof ( Generic_ADCS_AD_Tlm_t )
 
 #endif

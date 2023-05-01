@@ -12,6 +12,7 @@
 #include "generic_adcs_msgids.h"
 #include "generic_adcs_version.h"
 #include "generic_adcs_ingest.h"
+#include "generic_adcs_adac.h"
 #include "generic_adcs_app.h"
 
 // ADCS sensor messages
@@ -32,6 +33,7 @@ static void  Generic_ADCS_ProcessTelemetryRequest(void);
 static void  Generic_ADCS_ReportHousekeeping(void);
 static void  Generic_ADCS_ResetCounters(void);
 static int32 Generic_ADCS_SendDICommand(void);
+static int32 Generic_ADCS_SendADCommand(void);
 static int32 Generic_ADCS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
 
 /*
@@ -167,7 +169,14 @@ static int32 Generic_ADCS_AppInit(void)
     /*
     ** TODO: Subscribe to any other messages here
     */
-
+    status = CFE_SB_Subscribe(GENERIC_ADCS_ADAC_UPDATE_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_EVS_SendEvent(GENERIC_ADCS_SUB_REQ_HK_ERR_EID, CFE_EVS_ERROR,
+            "Error Subscribing to ADAC Update, MID=0x%04X, RC=0x%08X",
+            GENERIC_ADCS_ADAC_UPDATE_MID, (unsigned int) status);
+        return status;
+    }
 
     /* 
     ** Initialize the published HK message - this HK message will contain the 
@@ -180,7 +189,8 @@ static int32 Generic_ADCS_AppInit(void)
     /*
     ** TODO: Initialize any other messages that this app will publish
     */
-   CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -238,6 +248,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_MAG_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_mag(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Mag);
+            break;
+
+        case GENERIC_ADCS_ADAC_UPDATE_MID:
+            Generic_ADCS_execute_attitude_determination_and_attitude_control();
             break;
 
         /*
@@ -315,6 +329,18 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
+        case GENERIC_ADCS_SEND_AD_CMD_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
+            {
+                int32 status = Generic_ADCS_SendADCommand();
+                if (status != CFE_SUCCESS) {
+                    CFE_EVS_SendEvent(GENERIC_ADCS_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "Unable to send AD telemetry: status = %d", status);
+                }
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
         /*
         ** Invalid Command Codes
         */
@@ -380,10 +406,14 @@ static void  Generic_ADCS_ResetCounters(void)
 
 static int32 Generic_ADCS_SendDICommand(void)
 {
-    int32 status = OS_SUCCESS;
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DIPacket);
-    status = CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DIPacket);
-    return status;
+    return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DIPacket);
+}
+
+static int32 Generic_ADCS_SendADCommand(void)
+{
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ADPacket);
+    return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ADPacket);
 }
 
 /*

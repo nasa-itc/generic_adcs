@@ -16,10 +16,16 @@
 */
 #define GENERIC_ADCS_REQ_HK_MID           0x1941
 
+/*
+** This MID is for requesting the Generic ADCS app to perform AD and AC
+*/
+#define GENERIC_ADCS_ADAC_UPDATE_MID      0x1942
+
 /* 
 ** CCSDS V1 Telemetry Message IDs must be 0x08xx
 */
 #define GENERIC_ADCS_HK_TLM_MID           0x0940
 #define GENERIC_ADCS_DI_MID               0x0941
+#define GENERIC_ADCS_AD_MID               0x0942
 
 #endif
