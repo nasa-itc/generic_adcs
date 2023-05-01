@@ -20,5 +20,6 @@
 ** CCSDS V1 Telemetry Message IDs must be 0x08xx
 */
 #define GENERIC_ADCS_HK_TLM_MID           0x0940
+#define GENERIC_ADCS_DI_MID               0x0941
 
 #endif

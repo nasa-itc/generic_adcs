@@ -9,6 +9,6 @@
 #include "cfe.h"
 #include "generic_adcs_msg.h"
 
-void ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag);
+void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag);
 
 #endif

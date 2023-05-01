@@ -6,3 +6,13 @@ TELEMETRY GENERIC_ADCS GENERIC_ADCS_HK_TLM LITTLE_ENDIAN "Generic_ADCS_Hk_tlm_t"
   APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
   APPEND_ITEM    CMD_ERR_COUNT         8 UINT         "Command Error Count"
   APPEND_ITEM    CMD_COUNT             8 UINT         "Command Count"
+
+TELEMETRY GENERIC_ADCS GENERIC_ADCS_DI LITTLE_ENDIAN "Generic_ADCS_DI_Tlm_t"
+  APPEND_ID_ITEM CCSDS_STREAMID       16 UINT 0x0941  "CCSDS Packet Identification" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SEQUENCE       16 UINT         "CCSDS Packet Sequence Control" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_LENGTH         16 UINT         "CCSDS Packet Data Length" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SECONDS        32 UINT         "CCSDS Telemetry Secondary Header (seconds)"
+  APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
+  APPEND_ITEM    BVB_X                64 FLOAT        "Magnetic Field Vector in Body Frame, X component (T)"
+  APPEND_ITEM    BVB_Y                64 FLOAT        "Magnetic Field Vector in Body Frame, Y component (T)"
+  APPEND_ITEM    BVB_Z                64 FLOAT        "Magnetic Field Vector in Body Frame, Z component (T)"

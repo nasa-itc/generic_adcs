@@ -31,6 +31,7 @@ static void  Generic_ADCS_ProcessGroundCommand(void);
 static void  Generic_ADCS_ProcessTelemetryRequest(void);
 static void  Generic_ADCS_ReportHousekeeping(void);
 static void  Generic_ADCS_ResetCounters(void);
+static int32 Generic_ADCS_SendDICommand(void);
 static int32 Generic_ADCS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
 
 /*
@@ -179,7 +180,7 @@ static int32 Generic_ADCS_AppInit(void)
     /*
     ** TODO: Initialize any other messages that this app will publish
     */
-
+   CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -236,7 +237,7 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
             break;
 
         case GENERIC_MAG_DEVICE_TLM_MID:
-            ingest_generic_mag(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Mag);
+            Generic_ADCS_ingest_generic_mag(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Mag);
             break;
 
         /*
@@ -283,7 +284,10 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
                 /* Second, send EVS event on successful receipt ground commands*/
                 CFE_EVS_SendEvent(GENERIC_ADCS_CMD_NOOP_INF_EID, CFE_EVS_INFORMATION, "Generic_ADCS: NOOP command received");
                 /* Third, do the desired command action if applicable, in the case of NOOP it is no operation */
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
             }
+
             break;
 
         /*
@@ -294,6 +298,20 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             {
                 CFE_EVS_SendEvent(GENERIC_ADCS_CMD_RESET_INF_EID, CFE_EVS_INFORMATION, "Generic_ADCS: RESET counters command received");
                 Generic_ADCS_ResetCounters();
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
+        case GENERIC_ADCS_SEND_DI_CMD_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
+            {
+                int32 status = Generic_ADCS_SendDICommand();
+                if (status != CFE_SUCCESS) {
+                    CFE_EVS_SendEvent(GENERIC_ADCS_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "Unable to send DI telemetry: status = %d", status);
+                }
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
             }
             break;
 
@@ -358,6 +376,14 @@ static void  Generic_ADCS_ResetCounters(void)
 {
     Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount = 0;
     Generic_ADCS_AppData.HkTelemetryPkt.CommandCount = 0;
+}
+
+static int32 Generic_ADCS_SendDICommand(void)
+{
+    int32 status = OS_SUCCESS;
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DIPacket);
+    status = CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DIPacket);
+    return status;
 }
 
 /*

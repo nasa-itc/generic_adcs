@@ -13,6 +13,7 @@
 */
 #define GENERIC_ADCS_NOOP_CC                 0
 #define GENERIC_ADCS_RESET_COUNTERS_CC       1
+#define GENERIC_ADCS_SEND_DI_CMD_CC          2
 
 /* 
 ** Telemetry Request Command Codes
@@ -55,5 +56,6 @@ typedef struct
     uint8                         TlmHeader[CFE_SB_TLM_HDR_SIZE];
     Generic_ADCS_DI_Tlm_Payload_t Payload;
 } OS_PACK Generic_ADCS_DI_Tlm_t;
+#define GENERIC_ADCS_DI_LNGTH sizeof ( Generic_ADCS_DI_Tlm_t )
 
 #endif
