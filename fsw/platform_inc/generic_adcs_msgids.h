@@ -27,5 +27,7 @@
 #define GENERIC_ADCS_HK_TLM_MID           0x0940
 #define GENERIC_ADCS_DI_MID               0x0941
 #define GENERIC_ADCS_AD_MID               0x0942
+#define GENERIC_ADCS_GNC_MID              0x0943
+#define GENERIC_ADCS_AC_MID               0x0944
 
 #endif

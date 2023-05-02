@@ -34,6 +34,8 @@ static void  Generic_ADCS_ReportHousekeeping(void);
 static void  Generic_ADCS_ResetCounters(void);
 static int32 Generic_ADCS_SendDICommand(void);
 static int32 Generic_ADCS_SendADCommand(void);
+static int32 Generic_ADCS_SendGNCCommand(void);
+static int32 Generic_ADCS_SendACCommand(void);
 static int32 Generic_ADCS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
 
 /*
@@ -191,6 +193,8 @@ static int32 Generic_ADCS_AppInit(void)
     */
     CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.GNCPacket, GENERIC_ADCS_GNC_MID, GENERIC_ADCS_GNC_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -341,6 +345,30 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
+        case GENERIC_ADCS_SEND_GNC_CMD_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
+            {
+                int32 status = Generic_ADCS_SendGNCCommand();
+                if (status != CFE_SUCCESS) {
+                    CFE_EVS_SendEvent(GENERIC_ADCS_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "Unable to send GNC telemetry: status = %d", status);
+                }
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
+        case GENERIC_ADCS_SEND_AC_CMD_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
+            {
+                int32 status = Generic_ADCS_SendACCommand();
+                if (status != CFE_SUCCESS) {
+                    CFE_EVS_SendEvent(GENERIC_ADCS_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "Unable to send AC telemetry: status = %d", status);
+                }
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
         /*
         ** Invalid Command Codes
         */
@@ -414,6 +442,18 @@ static int32 Generic_ADCS_SendADCommand(void)
 {
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ADPacket);
     return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ADPacket);
+}
+
+static int32 Generic_ADCS_SendGNCCommand(void)
+{
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.GNCPacket);
+    return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.GNCPacket);
+}
+
+static int32 Generic_ADCS_SendACCommand(void)
+{
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ACSPacket);
+    return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ACSPacket);
 }
 
 /*

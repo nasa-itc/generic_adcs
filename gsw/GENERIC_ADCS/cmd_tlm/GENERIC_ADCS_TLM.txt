@@ -26,3 +26,35 @@ TELEMETRY GENERIC_ADCS GENERIC_ADCS_AD LITTLE_ENDIAN "Generic_ADCS_AD_Tlm_t"
   APPEND_ITEM    BVB_X                64 FLOAT        "Magnetic Field Vector in Body Frame, X component (T)"
   APPEND_ITEM    BVB_Y                64 FLOAT        "Magnetic Field Vector in Body Frame, Y component (T)"
   APPEND_ITEM    BVB_Z                64 FLOAT        "Magnetic Field Vector in Body Frame, Z component (T)"
+
+TELEMETRY GENERIC_ADCS GENERIC_ADCS_GNC LITTLE_ENDIAN "Generic_ADCS_GNC_Tlm_t"
+  APPEND_ID_ITEM CCSDS_STREAMID       16 UINT 0x0943  "CCSDS Packet Identification" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SEQUENCE       16 UINT         "CCSDS Packet Sequence Control" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_LENGTH         16 UINT         "CCSDS Packet Data Length" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SECONDS        32 UINT         "CCSDS Telemetry Secondary Header (seconds)"
+  APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
+  APPEND_ITEM    DT                   64 FLOAT        "Delta T"
+  APPEND_ITEM    BVB_X                64 FLOAT        "Magnetic Field Vector in Body Frame, X component (T)"
+  APPEND_ITEM    BVB_Y                64 FLOAT        "Magnetic Field Vector in Body Frame, Y component (T)"
+  APPEND_ITEM    BVB_Z                64 FLOAT        "Magnetic Field Vector in Body Frame, Z component (T)"
+  APPEND_ITEM    MCMD_X               64 FLOAT        "Magnetorquer Command in Body Frame, X component (A-m^2)"
+  APPEND_ITEM    MCMD_Y               64 FLOAT        "Magnetorquer Command in Body Frame, Y component (A-m^2)"
+  APPEND_ITEM    MCMD_Z               64 FLOAT        "Magnetorquer Command in Body Frame, Z component (A-m^2)"
+  APPEND_ITEM    TCMD_X               64 FLOAT        "Reaction Wheel Torque Command in Body Frame, X component (N-m)"
+  APPEND_ITEM    TCMD_Y               64 FLOAT        "Reaction Wheel Torque Command in Body Frame, Y component (N-m)"
+  APPEND_ITEM    TCMD_Z               64 FLOAT        "Reaction Wheel Torque Command in Body Frame, Z component (N-m)"
+
+TELEMETRY GENERIC_ADCS GENERIC_ADCS_AC LITTLE_ENDIAN "Generic_ADCS_AC_Tlm_t"
+  APPEND_ID_ITEM CCSDS_STREAMID       16 UINT 0x0944  "CCSDS Packet Identification" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SEQUENCE       16 UINT         "CCSDS Packet Sequence Control" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_LENGTH         16 UINT         "CCSDS Packet Data Length" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SECONDS        32 UINT         "CCSDS Telemetry Secondary Header (seconds)"
+  APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
+  APPEND_ITEM    B_RANGE              64 FLOAT        "Magnetic Field Range to Operate In (T)"
+  APPEND_ITEM    KB                   64 FLOAT        "Gain parameter"
+  APPEND_ITEM    BOLD_X               64 FLOAT        "Old Magnetic Field Vector in Body Frame, X component (T)"
+  APPEND_ITEM    BOLD_Y               64 FLOAT        "Old Magnetic Field Vector in Body Frame, Y component (T)"
+  APPEND_ITEM    BOLD_Z               64 FLOAT        "Old Magnetic Field Vector in Body Frame, Z component (T)"
+  APPEND_ITEM    BDOT_X               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, X component (T/s)"
+  APPEND_ITEM    BDOT_Y               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, Y component (T/s)"
+  APPEND_ITEM    BDOT_Z               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, Z component (T/s)"
