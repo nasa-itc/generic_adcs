@@ -89,6 +89,7 @@ typedef struct
 */
 typedef struct {
     double DT;
+    double MaxMcmd;
     double bvb[3];
     double Mcmd[3];
     double Tcmd[3];

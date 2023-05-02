@@ -44,12 +44,13 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
     static long First = 1;
     if (First) {
         First = 0;
-        GNC->DT = 0.1;
-        ACS->b_range = 4.096E-6;
+        GNC->DT = 0.1; // seconds
+        ACS->b_range = 4.096E-6; // Teslas
         ACS->Kb = 200.0;
         for (int i = 0; i < 3; i++) {
             ACS->bold[i] = GNC->bvb[i];
         }
+        GNC->MaxMcmd = 0.15; // A-m^2
     }
     /* apply control only if b-field is in range */
     if (MAGV(GNC->bvb) > ACS->b_range) {

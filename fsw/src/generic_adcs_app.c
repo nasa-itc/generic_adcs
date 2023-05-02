@@ -13,10 +13,12 @@
 #include "generic_adcs_version.h"
 #include "generic_adcs_ingest.h"
 #include "generic_adcs_adac.h"
+#include "generic_adcs_output.h"
 #include "generic_adcs_app.h"
 
-// ADCS sensor messages
+// ADCS sensor/actuator messages
 #include "generic_mag_msgids.h"
+#include "generic_torquer_msgids.h"
 
 /*
 ** Global Data
@@ -195,6 +197,7 @@ static int32 Generic_ADCS_AppInit(void)
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.GNCPacket, GENERIC_ADCS_GNC_MID, GENERIC_ADCS_GNC_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.MtbPctOnCmd, GENERIC_TORQUER_CMD_MID, GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN, TRUE);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -256,6 +259,7 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control();
+            Generic_ADCS_output_to_actuators();
             break;
 
         /*

@@ -10,6 +10,7 @@
 ** Include Files
 */
 #include "cfe.h"
+#include "generic_torquer_msg.h"
 #include "generic_adcs_msg.h"
 
 /*
@@ -34,7 +35,12 @@ typedef struct
     Generic_ADCS_AD_Tlm_t   ADPacket;
     Generic_ADCS_GNC_Tlm_t  GNCPacket;
     Generic_ADCS_AC_Tlm_t   ACSPacket;
-    
+
+    /*
+    ** Command packets to other apps
+    */
+    GENERIC_TORQUER_All_Percent_On_cmd_t MtbPctOnCmd;
+
     /*
     ** Operational data  - not reported in housekeeping
     */
