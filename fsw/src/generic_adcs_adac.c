@@ -50,7 +50,7 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
         for (int i = 0; i < 3; i++) {
             ACS->bold[i] = GNC->bvb[i];
         }
-        GNC->MaxMcmd = 0.15; // A-m^2
+        GNC->MaxMcmd = 1.42; // A-m^2
     }
     /* apply control only if b-field is in range */
     if (MAGV(GNC->bvb) > ACS->b_range) {
