@@ -82,4 +82,41 @@ typedef struct
 } OS_PACK Generic_ADCS_AD_Tlm_t;
 #define GENERIC_ADCS_AD_LNGTH sizeof ( Generic_ADCS_AD_Tlm_t )
 
+/*
+** Generic_ADCS GNC type definition
+*/
+typedef struct {
+    double DT;
+    double bvb[3];
+    double Mcmd[3];
+    double Tcmd[3];
+} OS_PACK Generic_ADCS_GNC_Tlm_Payload_t;
+
+typedef struct
+{
+    uint8                          TlmHeader[CFE_SB_TLM_HDR_SIZE];
+    Generic_ADCS_GNC_Tlm_Payload_t Payload;
+} OS_PACK Generic_ADCS_GNC_Tlm_t;
+#define GENERIC_ADCS_GNC_LNGTH sizeof ( Generic_ADCS_GNC_Tlm_t )
+
+/*
+** Generic_ADCS AC type definition
+*/
+typedef struct {
+    double b_range;
+    double Kb;
+    double bold[3];
+    double bdot[3];
+} OS_PACK Generic_ADCS_AC_Bdot_Tlm_t;
+
+typedef struct {
+    Generic_ADCS_AC_Bdot_Tlm_t Bdot;
+} OS_PACK Generic_ADCS_AC_Tlm_Payload_t;
+
+typedef struct {
+    uint8                         TlmHeader[CFE_SB_TLM_HDR_SIZE];
+    Generic_ADCS_AC_Tlm_Payload_t Payload;
+} OS_PACK Generic_ADCS_AC_Tlm_t;
+#define GENERIC_ADCS_AC_LNGTH sizeof ( Generic_ADCS_AC_Tlm_t );
+
 #endif
