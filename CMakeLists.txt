@@ -16,3 +16,6 @@ aux_source_directory(fsw/src APP_SRC_FILES)
 
 # Create the app module
 add_cfe_app(generic_adcs ${APP_SRC_FILES})
+
+# Install GNC configuration files
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/fsw/cfg/Inp_ADAC.txt DESTINATION ${CMAKE_INSTALL_PREFIX}/cpu${TGTSYS_${SYSVAR}}/${INSTALL_SUBDIR})

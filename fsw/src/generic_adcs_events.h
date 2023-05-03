@@ -15,6 +15,7 @@
 #define GENERIC_ADCS_SUB_CMD_ERR_EID           4
 #define GENERIC_ADCS_SUB_REQ_HK_ERR_EID        5
 #define GENERIC_ADCS_PROCESS_CMD_ERR_EID       6
+#define GENERIC_ADCS_FOPEN_ERR_EID             7
 
 /* Standard command event IDs */
 #define GENERIC_ADCS_CMD_ERR_EID               10
