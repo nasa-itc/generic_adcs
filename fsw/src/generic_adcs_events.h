@@ -22,4 +22,6 @@
 #define GENERIC_ADCS_CMD_NOOP_INF_EID          11
 #define GENERIC_ADCS_CMD_RESET_INF_EID         12
 
+#define GENERIC_ADCS_SET_MODE_INF_EID          20
+
 #endif

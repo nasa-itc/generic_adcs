@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "generic_adcs_app.h"
+#include "generic_adcs_adac.h"
 
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
@@ -30,9 +31,19 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
 
     AD_to_GNC(AD, GNC);
 
-    // if mode == bdot
-    AC_bdot(GNC, &ACS->Bdot);
-
+    switch(GNC->Mode) {
+    case BDOT_MODE:
+        AC_bdot(GNC, &ACS->Bdot);
+        break;
+    
+    case PASSIVE_MODE:
+    default:
+        for (int i = 0; i < 3; i++) {
+            GNC->Mcmd[i] = 0.0;
+            GNC->Tcmd[i] = 0.0;
+        }
+        break;
+    }
 }
 
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag)

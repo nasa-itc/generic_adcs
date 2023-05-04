@@ -17,6 +17,7 @@
 #define GENERIC_ADCS_SEND_AD_CMD_CC          3
 #define GENERIC_ADCS_SEND_GNC_CMD_CC         4
 #define GENERIC_ADCS_SEND_AC_CMD_CC          5
+#define GENERIC_ADCS_SET_MODE_CC             6
 
 /* 
 ** Telemetry Request Command Codes
@@ -32,6 +33,13 @@ typedef struct
     uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
 
 } Generic_ADCS_NoArgs_cmd_t;
+
+typedef struct
+{
+    /* Every command requires a header used to identify it */
+    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
+    uint8    Mode;
+} Generic_ADCS_Mode_cmd_t;
 
 /*
 ** Generic_ADCS housekeeping type definition
@@ -90,6 +98,7 @@ typedef struct
 typedef struct {
     double DT;
     double MaxMcmd;
+    uint8  Mode;
     double bvb[3];
     double Mcmd[3];
     double Tcmd[3];
