@@ -205,7 +205,15 @@ static int32 Generic_ADCS_AppInit(void)
     Generic_ADCS_ResetCounters();
 
     /* ADCS initializations */
-    FILE *adcs_in = fopen("cf/Inp_ADAC.txt", "r");
+    FILE *adcs_in = fopen("cf/Inp_DI.txt", "r");
+    if (adcs_in == NULL) {
+        CFE_EVS_SendEvent(GENERIC_ADCS_FOPEN_ERR_EID, CFE_EVS_ERROR, "Error opening cf/Inp_DI.txt");
+        return CFE_OS_FS_ERROR;
+    }
+    Generic_ADCS_ingest_init(adcs_in, &Generic_ADCS_AppData.DIPacket.Payload);
+    fclose(adcs_in);
+
+    adcs_in = fopen("cf/Inp_ADAC.txt", "r");
     if (adcs_in == NULL) {
         CFE_EVS_SendEvent(GENERIC_ADCS_FOPEN_ERR_EID, CFE_EVS_ERROR, "Error opening cf/Inp_ADAC.txt");
         return CFE_OS_FS_ERROR;

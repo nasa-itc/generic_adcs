@@ -6,14 +6,13 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include <math.h>
 #include "generic_adcs_app.h"
+#include "generic_adcs_utilities.h"
 #include "generic_adcs_adac.h"
 
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
-static double MAGV(double v[3]);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t *ACS)
 {
@@ -81,9 +80,4 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
             GNC->Tcmd[i] = 0.0;
         }
     }
-}
-
-static double MAGV(double v[3])
-{
-    return sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 }

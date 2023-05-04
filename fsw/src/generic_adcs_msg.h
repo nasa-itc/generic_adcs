@@ -57,7 +57,8 @@ typedef struct
 */
 typedef struct
 {
-    double bvb[3];
+    double qbs[4]; // quaternion from sensor to body
+    double bvb[3]; // magnetic field measurement by sensor in body frame
 } OS_PACK Generic_ADCS_DI_Mag_Tlm_Payload_t;
 
 typedef struct
