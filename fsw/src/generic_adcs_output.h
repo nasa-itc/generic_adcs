@@ -6,6 +6,6 @@
 #ifndef _GENERIC_ADCS_OUTPUT_H_
 #define _GENERIC_ADCS_OUTPUT_H_
 
-void Generic_ADCS_output_to_actuators(void);
+void Generic_ADCS_output_to_actuators(const Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 #endif
