@@ -38,6 +38,7 @@ static int32 Generic_ADCS_SendDICommand(void);
 static int32 Generic_ADCS_SendADCommand(void);
 static int32 Generic_ADCS_SendGNCCommand(void);
 static int32 Generic_ADCS_SendACCommand(void);
+static int32 Generic_ADCS_SendDOCommand(void);
 static int32 Generic_ADCS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 expected_length);
 
 /*
@@ -197,7 +198,9 @@ static int32 Generic_ADCS_AppInit(void)
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.GNCPacket, GENERIC_ADCS_GNC_MID, GENERIC_ADCS_GNC_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.DOPacket, GENERIC_ADCS_DO_MID, GENERIC_ADCS_DO_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.MtbPctOnCmd, GENERIC_TORQUER_CMD_MID, GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN, TRUE);
+    CFE_SB_SetCmdCode((CFE_SB_Msg_t *)&Generic_ADCS_AppData.MtbPctOnCmd, 5);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -219,6 +222,14 @@ static int32 Generic_ADCS_AppInit(void)
         return CFE_OS_FS_ERROR;
     }
     Generic_ADCS_init_attitude_determination_and_attitude_control(adcs_in, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
+    fclose(adcs_in);
+
+    adcs_in = fopen("cf/Inp_DO.txt", "r");
+    if (adcs_in == NULL) {
+        CFE_EVS_SendEvent(GENERIC_ADCS_FOPEN_ERR_EID, CFE_EVS_ERROR, "Error opening cf/Inp_DO.txt");
+        return CFE_OS_FS_ERROR;
+    }
+    Generic_ADCS_output_init(adcs_in, &Generic_ADCS_AppData.DOPacket.Payload);
     fclose(adcs_in);
 
     /*
@@ -276,7 +287,7 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control(&Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
-            Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload);
+            Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.DOPacket.Payload, &Generic_ADCS_AppData.MtbPctOnCmd);
             break;
 
         /*
@@ -342,6 +353,18 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
+        case GENERIC_ADCS_SET_MODE_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_Mode_cmd_t)) == OS_SUCCESS)
+            {
+                Generic_ADCS_Mode_cmd_t *cmd;
+                cmd = (Generic_ADCS_Mode_cmd_t *)Generic_ADCS_AppData.MsgPtr; 
+                Generic_ADCS_AppData.GNCPacket.Payload.Mode = cmd->Mode; // Keep the current value in **one** place
+                CFE_EVS_SendEvent(GENERIC_ADCS_SET_MODE_INF_EID, CFE_EVS_INFORMATION, "***ADCS*** Changed mode to: %u", cmd->Mode);
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
         case GENERIC_ADCS_SEND_DI_CMD_CC:
             if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
             {
@@ -390,13 +413,13 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
-        case GENERIC_ADCS_SET_MODE_CC:
-            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_Mode_cmd_t)) == OS_SUCCESS)
+        case GENERIC_ADCS_SEND_DO_CMD_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
             {
-                Generic_ADCS_Mode_cmd_t *cmd;
-                cmd = (Generic_ADCS_Mode_cmd_t *)Generic_ADCS_AppData.MsgPtr; 
-                Generic_ADCS_AppData.GNCPacket.Payload.Mode = cmd->Mode; // Keep the current value in **one** place
-                CFE_EVS_SendEvent(GENERIC_ADCS_SET_MODE_INF_EID, CFE_EVS_INFORMATION, "***ADCS*** Changed mode to: %u", cmd->Mode);
+                int32 status = Generic_ADCS_SendDOCommand();
+                if (status != CFE_SUCCESS) {
+                    CFE_EVS_SendEvent(GENERIC_ADCS_CMD_ERR_EID, CFE_EVS_EventType_ERROR, "Unable to send DO telemetry: status = %d", status);
+                }
             } else {
                 Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
             }
@@ -487,6 +510,12 @@ static int32 Generic_ADCS_SendACCommand(void)
 {
     CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ACSPacket);
     return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.ACSPacket);
+}
+
+static int32 Generic_ADCS_SendDOCommand(void)
+{
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DOPacket);
+    return CFE_SB_SendMsg((CFE_SB_Msg_t *) &Generic_ADCS_AppData.DOPacket);
 }
 
 /*

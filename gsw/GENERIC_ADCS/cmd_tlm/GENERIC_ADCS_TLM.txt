@@ -66,3 +66,18 @@ TELEMETRY GENERIC_ADCS GENERIC_ADCS_AC LITTLE_ENDIAN "Generic_ADCS_AC_Tlm_t"
   APPEND_ITEM    BDOT_X               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, X component (T/s)"
   APPEND_ITEM    BDOT_Y               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, Y component (T/s)"
   APPEND_ITEM    BDOT_Z               64 FLOAT        "Derivative of Magnetic Field Vector in Body Frame, Z component (T/s)"
+
+TELEMETRY GENERIC_ADCS GENERIC_ADCS_DO LITTLE_ENDIAN "Generic_ADCS_DO_Tlm_t"
+  APPEND_ID_ITEM CCSDS_STREAMID       16 UINT 0x0945  "CCSDS Packet Identification" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SEQUENCE       16 UINT         "CCSDS Packet Sequence Control" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_LENGTH         16 UINT         "CCSDS Packet Data Length" BIG_ENDIAN
+  APPEND_ITEM    CCSDS_SECONDS        32 UINT         "CCSDS Telemetry Secondary Header (seconds)"
+  APPEND_ITEM    CCSDS_SUBSECS        16 UINT         "CCSDS Telemetry Secondary Header (subseconds)"
+  APPEND_ITEM    QBA_0                64 FLOAT        "Quaternion from magnetic torqer to body frame"
+  APPEND_ITEM    QBA_1                64 FLOAT        "Quaternion from magnetic torquer to body frame"
+  APPEND_ITEM    QBA_2                64 FLOAT        "Quaternion from magnetic torquer to body frame"
+  APPEND_ITEM    QBA_3                64 FLOAT        "Quaternion from magnetic torquer to body frame"
+  APPEND_ITEM    MCMD_X               64 FLOAT        "Magnetorquer Command in Actuator Frame, X component (A-m^2)"
+  APPEND_ITEM    MCMD_Y               64 FLOAT        "Magnetorquer Command in Actuator Frame, Y component (A-m^2)"
+  APPEND_ITEM    MCMD_Z               64 FLOAT        "Magnetorquer Command in Actuator Frame, Z component (A-m^2)"
+  

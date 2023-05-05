@@ -29,5 +29,6 @@
 #define GENERIC_ADCS_AD_MID               0x0942
 #define GENERIC_ADCS_GNC_MID              0x0943
 #define GENERIC_ADCS_AC_MID               0x0944
+#define GENERIC_ADCS_DO_MID               0x0945
 
 #endif

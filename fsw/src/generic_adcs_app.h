@@ -35,7 +35,8 @@ typedef struct
     Generic_ADCS_AD_Tlm_t   ADPacket;
     Generic_ADCS_GNC_Tlm_t  GNCPacket;
     Generic_ADCS_AC_Tlm_t   ACSPacket;
-
+    Generic_ADCS_DO_Tlm_t   DOPacket;
+    
     /*
     ** Command packets to other apps
     */

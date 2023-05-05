@@ -34,3 +34,24 @@ void QxV(double QAB[4],double Vb[3],double Va[3])
                           + 2.0*((qq[0][2]+qq[1][3])*Vb[0]
                                 +(qq[1][2]-qq[0][3])*Vb[1]);
 }
+/**********************************************************************/
+/* Find components of V in B, given components of V in A, and qab     */
+void QTxV(double QAB[4],double Va[3],double Vb[3])
+{
+      double qq[4][4];
+      long i,j;
+
+      for(i=0;i<4;i++) {
+         for(j=i;j<4;j++) qq[i][j] = QAB[i]*QAB[j];
+      }
+
+      Vb[0] = ( qq[0][0]-qq[1][1]-qq[2][2]+qq[3][3])*Va[0]
+                          + 2.0*((qq[0][1]-qq[2][3])*Va[1]
+                                +(qq[0][2]+qq[1][3])*Va[2]);
+      Vb[1] = (-qq[0][0]+qq[1][1]-qq[2][2]+qq[3][3])*Va[1]
+                          + 2.0*((qq[1][2]-qq[0][3])*Va[2]
+                                +(qq[0][1]+qq[2][3])*Va[0]);
+      Vb[2] = (-qq[0][0]-qq[1][1]+qq[2][2]+qq[3][3])*Va[2]
+                          + 2.0*((qq[0][2]-qq[1][3])*Va[0]
+                                +(qq[1][2]+qq[0][3])*Va[1]);
+}
