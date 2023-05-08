@@ -1,2 +1,4 @@
 !!!!!!!!!!!!!!! Magnetometer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame
+!!!!!!!!!!!!!!! Fine Sun Sensor !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame

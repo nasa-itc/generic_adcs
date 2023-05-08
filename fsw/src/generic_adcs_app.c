@@ -18,6 +18,7 @@
 
 // ADCS sensor/actuator messages
 #include "generic_mag_msgids.h"
+#include "generic_fss_msgids.h"
 #include "generic_torquer_msgids.h"
 
 /*
@@ -195,6 +196,7 @@ static int32 Generic_ADCS_AppInit(void)
     ** TODO: Initialize any other messages that this app will publish
     */
     CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
+    Generic_ADCS_AppData.DIPacket.Payload.Fss.valid = 1;
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.GNCPacket, GENERIC_ADCS_GNC_MID, GENERIC_ADCS_GNC_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);
@@ -241,6 +243,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_MAG_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(GENERIC_FSS_DEVICE_TLM_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_FSS_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -283,6 +291,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_MAG_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_mag(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Mag);
+            break;
+
+        case GENERIC_FSS_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_generic_fss(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Fss);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:

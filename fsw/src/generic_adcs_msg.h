@@ -64,7 +64,15 @@ typedef struct
 
 typedef struct
 {
+    double qbs[4]; // quaternion from sensor to body
+    uint8  valid;
+    double svb[3]; // sun vector from sensor in body frame
+} OS_PACK Generic_ADCS_DI_Fss_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
+    Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
 } OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct
