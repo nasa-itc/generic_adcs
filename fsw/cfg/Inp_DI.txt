@@ -1,4 +1,12 @@
 !!!!!!!!!!!!!!! Magnetometer !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame
+ 0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame
 !!!!!!!!!!!!!!! Fine Sun Sensor !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame
+ 0.0     0.0     0.0     1.0         ! Quaternion from sensor to body frame
+!!!!!!!!!!!!!!! Coarse Sun Sensors !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ 1.0     0.0     0.0     0.001       ! Axis in body, scale factor
+ 0.0     1.0     0.0     0.001       ! Axis in body, scale factor
+ 0.0     0.0     1.0     0.001       ! Axis in body, scale factor
+-1.0     0.0     0.0     0.001       ! Axis in body, scale factor
+ 0.0    -1.0     0.0     0.001       ! Axis in body, scale factor
+ 0.0     0.0    -1.0     0.001       ! Axis in body, scale factor
+

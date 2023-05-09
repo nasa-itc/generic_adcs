@@ -71,8 +71,16 @@ typedef struct
 
 typedef struct
 {
+    double axis[3]; // CSS axis in body frame
+    double scale;   // scale factor
+    double voltage;
+} OS_PACK Generic_ADCS_DI_Css_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
+    Generic_ADCS_DI_Css_Tlm_Payload_t Css[6];
 } OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct

@@ -8,6 +8,7 @@
 #include <math.h>
 #include "generic_mag_msg.h"
 #include "generic_fss_msg.h"
+#include "generic_css_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -20,6 +21,13 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Mag.qbs[0], &DI->Mag.qbs[1], &DI->Mag.qbs[2], &DI->Mag.qbs[3], junk, &newline);
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Fss.qbs[0], &DI->Fss.qbs[1], &DI->Fss.qbs[2], &DI->Fss.qbs[3], junk, &newline);
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[0].axis[0], &DI->Css[0].axis[1], &DI->Css[0].axis[2], &DI->Css[0].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[1].axis[0], &DI->Css[1].axis[1], &DI->Css[1].axis[2], &DI->Css[1].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[2].axis[0], &DI->Css[2].axis[1], &DI->Css[2].axis[2], &DI->Css[2].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[3].axis[0], &DI->Css[3].axis[1], &DI->Css[3].axis[2], &DI->Css[3].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[4].axis[0], &DI->Css[4].axis[1], &DI->Css[4].axis[2], &DI->Css[4].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[5].axis[0], &DI->Css[5].axis[1], &DI->Css[5].axis[2], &DI->Css[5].scale, junk, &newline);
 }
 
 void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
@@ -52,4 +60,9 @@ void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tl
         Fss->svb[1] = 0.0;
         Fss->svb[2] = 0.0;
     }
+}
+
+void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
+{
+    GENERIC_CSS_Device_tlm_t *css = (GENERIC_CSS_Device_tlm_t *)Msg;
 }
