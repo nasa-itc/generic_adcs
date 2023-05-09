@@ -22,12 +22,12 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Fss.qbs[0], &DI->Fss.qbs[1], &DI->Fss.qbs[2], &DI->Fss.qbs[3], junk, &newline);
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[0].axis[0], &DI->Css[0].axis[1], &DI->Css[0].axis[2], &DI->Css[0].scale, junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[1].axis[0], &DI->Css[1].axis[1], &DI->Css[1].axis[2], &DI->Css[1].scale, junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[2].axis[0], &DI->Css[2].axis[1], &DI->Css[2].axis[2], &DI->Css[2].scale, junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[3].axis[0], &DI->Css[3].axis[1], &DI->Css[3].axis[2], &DI->Css[3].scale, junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[4].axis[0], &DI->Css[4].axis[1], &DI->Css[4].axis[2], &DI->Css[4].scale, junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css[5].axis[0], &DI->Css[5].axis[1], &DI->Css[5].axis[2], &DI->Css[5].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[0].axis[0], &DI->Css.Sensor[0].axis[1], &DI->Css.Sensor[0].axis[2], &DI->Css.Sensor[0].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[1].axis[0], &DI->Css.Sensor[1].axis[1], &DI->Css.Sensor[1].axis[2], &DI->Css.Sensor[1].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[2].axis[0], &DI->Css.Sensor[2].axis[1], &DI->Css.Sensor[2].axis[2], &DI->Css.Sensor[2].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[3].axis[0], &DI->Css.Sensor[3].axis[1], &DI->Css.Sensor[3].axis[2], &DI->Css.Sensor[3].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[4].axis[0], &DI->Css.Sensor[4].axis[1], &DI->Css.Sensor[4].axis[2], &DI->Css.Sensor[4].scale, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[5].axis[0], &DI->Css.Sensor[5].axis[1], &DI->Css.Sensor[5].axis[2], &DI->Css.Sensor[5].scale, junk, &newline);
 }
 
 void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
@@ -65,4 +65,23 @@ void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tl
 void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
 {
     GENERIC_CSS_Device_tlm_t *css = (GENERIC_CSS_Device_tlm_t *)Msg;
+    Css->valid = 0;
+    Css->Sensor[0].percenton = css->Generic_css.Voltage[0] * Css->Sensor[0].scale;
+    Css->Sensor[1].percenton = css->Generic_css.Voltage[1] * Css->Sensor[1].scale;
+    Css->Sensor[2].percenton = css->Generic_css.Voltage[2] * Css->Sensor[2].scale;
+    Css->Sensor[3].percenton = css->Generic_css.Voltage[3] * Css->Sensor[3].scale;
+    Css->Sensor[4].percenton = css->Generic_css.Voltage[4] * Css->Sensor[4].scale;
+    Css->Sensor[5].percenton = css->Generic_css.Voltage[5] * Css->Sensor[5].scale;
+
+    double svb[3] = {0.0, 0.0, 0.0};
+    for (int i = 0; i < 6; i++) {
+        svb[0] += Css->Sensor[i].axis[0] * Css->Sensor[i].percenton;
+        svb[1] += Css->Sensor[i].axis[1] * Css->Sensor[i].percenton;
+        svb[2] += Css->Sensor[i].axis[2] * Css->Sensor[i].percenton;
+    }
+    UNITV(svb);
+
+    Css->svb[0] = svb[0];
+    Css->svb[1] = svb[1];
+    Css->svb[2] = svb[2];
 }

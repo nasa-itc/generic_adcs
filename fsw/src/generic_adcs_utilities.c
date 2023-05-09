@@ -55,3 +55,16 @@ void QTxV(double QAB[4],double Va[3],double Vb[3])
                           + 2.0*((qq[0][2]-qq[1][3])*Va[0]
                                 +(qq[1][2]+qq[0][3])*Va[1]);
 }
+/**********************************************************************/
+/*  Normalize a 3-vector if it is non-zero.                           */
+void UNITV(double V[3])
+{
+      double A;
+
+      A=sqrt(V[0]*V[0]+V[1]*V[1]+V[2]*V[2]);
+      if (A > 0.0) {
+         V[0]/=A;
+         V[1]/=A;
+         V[2]/=A;
+      }
+}
