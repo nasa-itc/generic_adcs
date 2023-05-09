@@ -85,9 +85,18 @@ typedef struct
 
 typedef struct
 {
+    double qbs[4]; // quaternion from sensor to body
+    double pos[3]; // position of sensor in body
+    double wbn[3]; // angular rate
+    double acc[3]; // acceleration
+} OS_PACK Generic_ADCS_DI_Imu_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
     Generic_ADCS_DI_Css_Tlm_Payload_t Css;
+    Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
 } OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct

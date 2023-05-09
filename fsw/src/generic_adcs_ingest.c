@@ -28,6 +28,9 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[3].axis[0], &DI->Css.Sensor[3].axis[1], &DI->Css.Sensor[3].axis[2], &DI->Css.Sensor[3].scale, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[4].axis[0], &DI->Css.Sensor[4].axis[1], &DI->Css.Sensor[4].axis[2], &DI->Css.Sensor[4].scale, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[5].axis[0], &DI->Css.Sensor[5].axis[1], &DI->Css.Sensor[5].axis[2], &DI->Css.Sensor[5].scale, junk, &newline);
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Imu.qbs[0], &DI->Imu.qbs[1], &DI->Imu.qbs[2], &DI->Imu.qbs[3], junk, &newline);
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &DI->Imu.pos[0], &DI->Imu.pos[1], &DI->Imu.pos[2], junk, &newline);
 }
 
 void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
