@@ -197,8 +197,6 @@ static int32 Generic_ADCS_AppInit(void)
     ** TODO: Initialize any other messages that this app will publish
     */
     CFE_SB_InitMsg(&Generic_ADCS_AppData.DIPacket, GENERIC_ADCS_DI_MID, GENERIC_ADCS_DI_LNGTH, TRUE);
-    Generic_ADCS_AppData.DIPacket.Payload.Fss.valid = 1;
-    Generic_ADCS_AppData.DIPacket.Payload.Css.valid = 1;
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ADPacket, GENERIC_ADCS_AD_MID, GENERIC_ADCS_AD_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.GNCPacket, GENERIC_ADCS_GNC_MID, GENERIC_ADCS_GNC_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);

@@ -46,8 +46,9 @@ void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tl
 {
     GENERIC_FSS_Device_tlm_t *fss = (GENERIC_FSS_Device_tlm_t *)Msg;
 
-    Fss->valid = fss->Generic_fss.ErrorCode;
-    if (Fss->valid == 0) {
+    Fss->valid = 0;
+    if (fss->Generic_fss.ErrorCode == 0) Fss->valid = 1;
+    if (Fss->valid == 1) {
         double svs[3];
         double ta = tan(fss->Generic_fss.Alpha);
         double tb = tan(fss->Generic_fss.Beta);
@@ -65,7 +66,6 @@ void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tl
 void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
 {
     GENERIC_CSS_Device_tlm_t *css = (GENERIC_CSS_Device_tlm_t *)Msg;
-    Css->valid = 0;
     Css->Sensor[0].percenton = css->Generic_css.Voltage[0] * Css->Sensor[0].scale;
     Css->Sensor[1].percenton = css->Generic_css.Voltage[1] * Css->Sensor[1].scale;
     Css->Sensor[2].percenton = css->Generic_css.Voltage[2] * Css->Sensor[2].scale;
@@ -84,4 +84,9 @@ void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tl
     Css->svb[0] = svb[0];
     Css->svb[1] = svb[1];
     Css->svb[2] = svb[2];
+    if (MAGV(svb) > 0.0) {
+        Css->valid = 1;
+    } else {
+        Css->valid = 0;
+    }
 }

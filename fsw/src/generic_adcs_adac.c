@@ -11,6 +11,7 @@
 #include "generic_adcs_adac.h"
 
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
+static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS, Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 
@@ -27,6 +28,7 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
 void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Generic_ADCS_DI_Tlm_Payload_t *DI, Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t *ACS)
 {
     AD_mag(&DI->Mag, &AD->Mag);
+    AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
 
     AD_to_GNC(AD, GNC);
 
@@ -50,6 +52,29 @@ static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS
     /* AD very simple for magnetometer... there is only one mag and no fusion with anything else */
     for (int i = 0; i < 3; i++) {
         AD_Mag->bvb[i] = DI_Mag->bvb[i];
+    }
+}
+
+static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_Fss, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_Css, Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol)
+{
+    if (DI_Fss->valid == 1) {
+        AD_Sol->SunValid = 1;
+        AD_Sol->FssValid = 1;
+        AD_Sol->svb[0] = DI_Fss->svb[0];
+        AD_Sol->svb[1] = DI_Fss->svb[1];
+        AD_Sol->svb[2] = DI_Fss->svb[2];
+    } else if (DI_Css->valid == 1) {
+        AD_Sol->SunValid = 1;
+        AD_Sol->FssValid = 0;
+        AD_Sol->svb[0] = DI_Css->svb[0];
+        AD_Sol->svb[1] = DI_Css->svb[1];
+        AD_Sol->svb[2] = DI_Css->svb[2];
+    } else {
+        AD_Sol->SunValid = 0;
+        AD_Sol->FssValid = 0;
+        AD_Sol->svb[0] = 0.0;
+        AD_Sol->svb[1] = 0.0;
+        AD_Sol->svb[2] = 0.0;
     }
 }
 

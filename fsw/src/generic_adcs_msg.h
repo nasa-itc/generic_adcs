@@ -107,7 +107,15 @@ typedef struct
 
 typedef struct
 {
+    uint8 SunValid;
+    uint8 FssValid;
+    double svb[3];
+} OS_PACK Generic_ADCS_AD_Sol_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
+    Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
 } OS_PACK Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct
