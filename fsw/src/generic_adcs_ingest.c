@@ -9,6 +9,7 @@
 #include "generic_mag_msg.h"
 #include "generic_fss_msg.h"
 #include "generic_css_msg.h"
+#include "generic_imu_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -92,4 +93,13 @@ void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tl
     } else {
         Css->valid = 0;
     }
+}
+
+void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
+{
+    GENERIC_IMU_Device_tlm_t *imu = (GENERIC_IMU_Device_tlm_t *)Msg;
+    double wsn[3] = {imu->Generic_imu.X_Data.AngularAcc, imu->Generic_imu.Y_Data.AngularAcc, imu->Generic_imu.Z_Data.AngularAcc};
+    QxV(Imu->qbs, wsn, Imu->wbn);
+    double acc[3] = {imu->Generic_imu.X_Data.LinearAcc, imu->Generic_imu.Y_Data.LinearAcc, imu->Generic_imu.Z_Data.LinearAcc};
+    QxV(Imu->qbs, acc, Imu->acc);
 }

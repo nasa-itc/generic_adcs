@@ -20,6 +20,7 @@
 #include "generic_mag_msgids.h"
 #include "generic_fss_msgids.h"
 #include "generic_css_msgids.h"
+#include "generic_imu_msgids.h"
 #include "generic_torquer_msgids.h"
 
 /*
@@ -255,6 +256,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_CSS_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(GENERIC_IMU_DEVICE_TLM_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_IMU_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -305,6 +312,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_CSS_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_css(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Css);
+            break;
+
+        case GENERIC_IMU_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_generic_imu(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Imu);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
