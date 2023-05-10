@@ -102,4 +102,5 @@ void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tl
     QxV(Imu->qbs, wsn, Imu->wbn);
     double acc[3] = {imu->Generic_imu.X_Data.LinearAcc, imu->Generic_imu.Y_Data.LinearAcc, imu->Generic_imu.Z_Data.LinearAcc};
     QxV(Imu->qbs, acc, Imu->acc);
+    Imu->valid = 1;
 }

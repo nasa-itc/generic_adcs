@@ -224,7 +224,7 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_EVS_SendEvent(GENERIC_ADCS_FOPEN_ERR_EID, CFE_EVS_ERROR, "Error opening cf/Inp_ADAC.txt");
         return CFE_OS_FS_ERROR;
     }
-    Generic_ADCS_init_attitude_determination_and_attitude_control(adcs_in, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
+    Generic_ADCS_init_attitude_determination_and_attitude_control(adcs_in, &Generic_ADCS_AppData.ADPacket.Payload, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
     fclose(adcs_in);
 
     adcs_in = fopen("cf/Inp_DO.txt", "r");
