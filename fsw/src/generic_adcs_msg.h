@@ -154,6 +154,8 @@ typedef struct {
     double MaxMcmd;
     uint8  Mode;
     double bvb[3];
+    double svb[3];
+    uint8  SunValid;
     double Mcmd[3];
     double Tcmd[3];
 } OS_PACK Generic_ADCS_GNC_Tlm_Payload_t;

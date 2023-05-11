@@ -116,7 +116,9 @@ static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_
 {
     for (int i = 0; i < 3; i++) {
         GNC->bvb[i] = AD->Mag.bvb[i];
+        GNC->svb[i] = AD->Sol.svb[i];
     }
+    GNC->SunValid = AD->Sol.SunValid;
 }
 
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *ACS)
