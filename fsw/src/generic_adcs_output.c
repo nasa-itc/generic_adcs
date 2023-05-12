@@ -35,6 +35,12 @@ static void send_mtb_commands(double Mcmd[3], Generic_ADCS_DO_Tlm_Payload_t *DO,
         (MtbPctOnCmd->Direction_2 != CurrentMtb[2].Direction) || (MtbPctOnCmd->PercentOn_2 != CurrentMtb[2].PercentOn)) {
         CFE_SB_TimeStampMsg((CFE_SB_Msg_t *)MtbPctOnCmd);
         CFE_SB_SendMsg((CFE_SB_Msg_t *)MtbPctOnCmd);
+        CurrentMtb[0].Direction = MtbPctOnCmd->Direction_0;
+        CurrentMtb[0].PercentOn = MtbPctOnCmd->PercentOn_0;
+        CurrentMtb[1].Direction = MtbPctOnCmd->Direction_1;
+        CurrentMtb[1].PercentOn = MtbPctOnCmd->PercentOn_1;
+        CurrentMtb[2].Direction = MtbPctOnCmd->Direction_2;
+        CurrentMtb[2].PercentOn = MtbPctOnCmd->PercentOn_2;
     }
 }
 
