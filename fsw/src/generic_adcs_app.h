@@ -11,6 +11,7 @@
 */
 #include "cfe.h"
 #include "generic_torquer_msg.h"
+#include "generic_reaction_wheel_msg.h"
 #include "generic_adcs_msg.h"
 
 /*
@@ -41,6 +42,7 @@ typedef struct
     ** Command packets to other apps
     */
     GENERIC_TORQUER_All_Percent_On_cmd_t MtbPctOnCmd;
+    GENERIC_RW_Cmd_t                     RwCmd;
 
     /*
     ** Operational data  - not reported in housekeeping

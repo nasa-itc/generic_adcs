@@ -198,7 +198,14 @@ typedef struct
 
 typedef struct
 {
+    double axis[3][3];
+    double Tcmd[3];
+} OS_PACK Generic_ADCS_DO_Rw_TlmPayload_t;
+
+typedef struct
+{
     Generic_ADCS_DO_Trq_TlmPayload_t Trq;
+    Generic_ADCS_DO_Rw_TlmPayload_t Rw;
 } OS_PACK Generic_ADCS_DO_Tlm_Payload_t;
 
 typedef struct

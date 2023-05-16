@@ -22,6 +22,7 @@
 #include "generic_css_msgids.h"
 #include "generic_imu_msgids.h"
 #include "generic_torquer_msgids.h"
+#include "generic_reaction_wheel_msgids.h"
 
 /*
 ** Global Data
@@ -203,7 +204,9 @@ static int32 Generic_ADCS_AppInit(void)
     CFE_SB_InitMsg(&Generic_ADCS_AppData.ACSPacket, GENERIC_ADCS_AC_MID, GENERIC_ADCS_AC_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.DOPacket, GENERIC_ADCS_DO_MID, GENERIC_ADCS_DO_LNGTH, TRUE);
     CFE_SB_InitMsg(&Generic_ADCS_AppData.MtbPctOnCmd, GENERIC_TORQUER_CMD_MID, GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN, TRUE);
-    CFE_SB_SetCmdCode((CFE_SB_Msg_t *)&Generic_ADCS_AppData.MtbPctOnCmd, 5);
+    CFE_SB_SetCmdCode((CFE_SB_Msg_t *)&Generic_ADCS_AppData.MtbPctOnCmd, GENERIC_TORQUER_CONFIG_ALL_CC);
+    CFE_SB_InitMsg(&Generic_ADCS_AppData.RwCmd, GENERIC_RW_APP_CMD_MID, GENERIC_RW_CMD_LEN, TRUE);
+    CFE_SB_SetCmdCode((CFE_SB_Msg_t *)&Generic_ADCS_AppData.RwCmd, GENERIC_RW_APP_SET_TORQUE_CC);
 
     /* 
     ** Always reset all counters during application initialization 
@@ -320,7 +323,7 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control(&Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
-            Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.DOPacket.Payload, &Generic_ADCS_AppData.MtbPctOnCmd);
+            Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.DOPacket.Payload, &Generic_ADCS_AppData.MtbPctOnCmd, &Generic_ADCS_AppData.RwCmd);
             break;
 
         /*
