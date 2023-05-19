@@ -89,3 +89,8 @@ double arccos(double x)
 
    return (acos(x));
 }
+/**********************************************************************/
+double Limit(double x,double min, double max)
+{
+      return(x < min ? min : (x > max ? max : x));
+}

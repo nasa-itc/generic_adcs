@@ -156,6 +156,7 @@ typedef struct {
     double bvb[3];
     double svb[3];
     uint8  SunValid;
+    double wbn[3];
     double Mcmd[3];
     double Tcmd[3];
 } OS_PACK Generic_ADCS_GNC_Tlm_Payload_t;
@@ -178,7 +179,24 @@ typedef struct {
 } OS_PACK Generic_ADCS_AC_Bdot_Tlm_t;
 
 typedef struct {
-    Generic_ADCS_AC_Bdot_Tlm_t Bdot;
+   /* Inputs*/
+   double Kp[3];
+   double Kr[3];
+   double sside[3];
+   double vmax;
+   double cmd_wbn[3];
+   uint8 h_mgmt;
+
+   /* Internal Variables */
+   double therr[3];
+   double werr[3];
+   double Tcmd[3];
+   double err_t;
+} OS_PACK Generic_ADCS_AC_Sunsafe_Tlm_t;
+
+typedef struct {
+    Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
+    Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
 } OS_PACK Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct {

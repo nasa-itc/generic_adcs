@@ -13,5 +13,6 @@ void QxV(double QAB[4],double Vb[3],double Va[3]);
 void QTxV(double QAB[4],double Va[3],double Vb[3]);
 void UNITV(double V[3]);
 double arccos(double x);
+double Limit(double x,double min, double max);
 
 #endif

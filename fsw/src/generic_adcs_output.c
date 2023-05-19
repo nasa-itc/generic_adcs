@@ -14,7 +14,7 @@ static void send_rw_commands(double Tcmd[3], Generic_ADCS_DO_Rw_TlmPayload_t *DO
 
 void Generic_ADCS_output_init(FILE *in, Generic_ADCS_DO_Tlm_Payload_t *DO)
 {
-    char junk[120], newline;
+    char junk[512], newline;
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DO->Trq.qba[0], &DO->Trq.qba[1], &DO->Trq.qba[2], &DO->Trq.qba[3], junk, &newline);
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
@@ -66,7 +66,7 @@ static int16 CurrentRw[] = {0, 0, 0}; // Keep current state so commands are only
 static void send_rw_commands(double Tcmd[3], Generic_ADCS_DO_Rw_TlmPayload_t *DO, GENERIC_RW_Cmd_t *RwCmd)
 {
     int16 torque;
-    for (uint8 i = 0; i < 2; i++) {
+    for (uint8 i = 0; i < 3; i++) {
         DO->Tcmd[i] = Tcmd[i];
         torque = 10000.0 * VoV(Tcmd, DO->axis[i]); // cmd is in 10^-4 Nm
         if (torque != CurrentRw[i]) {
