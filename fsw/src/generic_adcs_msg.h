@@ -11,14 +11,15 @@
 /*
 ** Ground Command Codes
 */
-#define GENERIC_ADCS_NOOP_CC                 0
-#define GENERIC_ADCS_RESET_COUNTERS_CC       1
-#define GENERIC_ADCS_SET_MODE_CC             2
-#define GENERIC_ADCS_SEND_DI_CMD_CC          3
-#define GENERIC_ADCS_SEND_AD_CMD_CC          4
-#define GENERIC_ADCS_SEND_GNC_CMD_CC         5
-#define GENERIC_ADCS_SEND_AC_CMD_CC          6
-#define GENERIC_ADCS_SEND_DO_CMD_CC          7
+#define GENERIC_ADCS_NOOP_CC                    0
+#define GENERIC_ADCS_RESET_COUNTERS_CC          1
+#define GENERIC_ADCS_SET_MODE_CC                2
+#define GENERIC_ADCS_SEND_DI_CMD_CC             3
+#define GENERIC_ADCS_SEND_AD_CMD_CC             4
+#define GENERIC_ADCS_SEND_GNC_CMD_CC            5
+#define GENERIC_ADCS_SEND_AC_CMD_CC             6
+#define GENERIC_ADCS_SEND_DO_CMD_CC             7
+#define GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC 8
 
 /* 
 ** Telemetry Request Command Codes
@@ -41,6 +42,13 @@ typedef struct
     uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
     uint8    Mode;
 } Generic_ADCS_Mode_cmd_t;
+
+typedef struct
+{
+    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
+    uint8    MomentumManagement;
+} Generic_ADCS_MomentumManagement_cmd_t;
+
 
 /*
 ** Generic_ADCS housekeeping type definition
@@ -153,6 +161,7 @@ typedef struct {
     double DT;
     double MaxMcmd;
     uint8  Mode;
+    uint8  Hmgmt;
     double bvb[3];
     double svb[3];
     uint8  SunValid;

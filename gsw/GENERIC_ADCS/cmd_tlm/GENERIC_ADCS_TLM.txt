@@ -116,6 +116,9 @@ TELEMETRY GENERIC_ADCS GENERIC_ADCS_GNC LITTLE_ENDIAN "Generic_ADCS_GNC_Tlm_t"
     STATE PASSIVE                 0
     STATE BDOT                    1
     STATE SUNSAFE                 2
+  APPEND_ITEM    H_MGMT               8  UINT         "Momentum Management off (0) / on (1)"
+    STATE OFF                     0
+    STATE ON                      1
   APPEND_ITEM    BVB_X                64 FLOAT        "Magnetic Field Vector in Body Frame, X component (T)"
   APPEND_ITEM    BVB_Y                64 FLOAT        "Magnetic Field Vector in Body Frame, Y component (T)"
   APPEND_ITEM    BVB_Z                64 FLOAT        "Magnetic Field Vector in Body Frame, Z component (T)"

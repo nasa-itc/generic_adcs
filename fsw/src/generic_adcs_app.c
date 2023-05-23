@@ -401,6 +401,18 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
+        case GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_MomentumManagement_cmd_t)) == OS_SUCCESS)
+            {
+                Generic_ADCS_MomentumManagement_cmd_t *cmd;
+                cmd = (Generic_ADCS_MomentumManagement_cmd_t *)Generic_ADCS_AppData.MsgPtr; 
+                Generic_ADCS_AppData.GNCPacket.Payload.Hmgmt = cmd->MomentumManagement; // Keep the current value in **one** place
+                CFE_EVS_SendEvent(GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_INF_EID, CFE_EVS_INFORMATION, "***ADCS*** Changed momentum management to: %u", cmd->MomentumManagement);
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
         case GENERIC_ADCS_SEND_DI_CMD_CC:
             if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_NoArgs_cmd_t)) == OS_SUCCESS)
             {
