@@ -265,6 +265,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_IMU_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(GENERIC_RW_APP_HK_TLM_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_RW_APP_HK_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -319,6 +325,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_IMU_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_imu(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Imu);
+            break;
+        
+        case GENERIC_RW_APP_HK_TLM_MID:
+            Generic_ADCS_ingest_generic_rw(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Rw);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:

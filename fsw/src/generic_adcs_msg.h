@@ -102,10 +102,16 @@ typedef struct
 
 typedef struct
 {
+    double momentum[3];
+} OS_PACK Generic_ADCS_DI_Rw_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
     Generic_ADCS_DI_Css_Tlm_Payload_t Css;
     Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
+    Generic_ADCS_DI_Rw_Tlm_Payload_t  Rw;
 } OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct

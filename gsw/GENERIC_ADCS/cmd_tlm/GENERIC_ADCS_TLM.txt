@@ -76,6 +76,9 @@ TELEMETRY GENERIC_ADCS GENERIC_ADCS_DI LITTLE_ENDIAN "Generic_ADCS_DI_Tlm_t"
   APPEND_ITEM    IMU_ACC_X            64 FLOAT        "Acceleration, X component"
   APPEND_ITEM    IMU_ACC_Y            64 FLOAT        "Acceleration, Y component"
   APPEND_ITEM    IMU_ACC_Z            64 FLOAT        "Acceleration, Z component"
+  APPEND_ITEM    RW_MOMENTUM_1        64 FLOAT        "Reaction wheel momentum, wheel 1"
+  APPEND_ITEM    RW_MOMENTUM_2        64 FLOAT        "Reaction wheel momentum, wheel 2"
+  APPEND_ITEM    RW_MOMENTUM_3        64 FLOAT        "Reaction wheel momentum, wheel 3"
 
 TELEMETRY GENERIC_ADCS GENERIC_ADCS_AD LITTLE_ENDIAN "Generic_ADCS_AD_Tlm_t"
   APPEND_ID_ITEM CCSDS_STREAMID       16 UINT 0x0942  "CCSDS Packet Identification" BIG_ENDIAN

@@ -10,6 +10,7 @@
 #include "generic_fss_msg.h"
 #include "generic_css_msg.h"
 #include "generic_imu_msg.h"
+#include "generic_reaction_wheel_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -103,4 +104,12 @@ void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tl
     double acc[3] = {imu->Generic_imu.X_Data.LinearAcc, imu->Generic_imu.Y_Data.LinearAcc, imu->Generic_imu.Z_Data.LinearAcc};
     QxV(Imu->qbs, acc, Imu->acc);
     Imu->valid = 1;
+}
+
+void Generic_ADCS_ingest_generic_rw(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
+{
+    GENERIC_RW_HkTlm_t *rw = (GENERIC_RW_HkTlm_t *)Msg;
+    Rw->momentum[0] = rw->Payload.data.momentum[0];
+    Rw->momentum[1] = rw->Payload.data.momentum[1];
+    Rw->momentum[2] = rw->Payload.data.momentum[2];    
 }
