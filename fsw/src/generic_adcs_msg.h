@@ -102,7 +102,9 @@ typedef struct
 
 typedef struct
 {
-    double momentum[3];
+    double whl_axis[3][3];
+    double H_maxB[3];
+    double HwhlB[3];
 } OS_PACK Generic_ADCS_DI_Rw_Tlm_Payload_t;
 
 typedef struct
@@ -164,14 +166,26 @@ typedef struct
 ** Generic_ADCS GNC type definition
 */
 typedef struct {
+    double Kb;
+    double b_range;
+    double loFrac;
+    double hiFrac;
+    uint8  mm_active[3];
+    double Mcmd[3];
+} OS_PACK Generic_ADCS_GNC_Hmgmt_t;
+
+typedef struct {
     double DT;
     double MaxMcmd;
     uint8  Mode;
-    uint8  Hmgmt;
+    uint8  HmgmtOn;
+    Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double bvb[3];
     double svb[3];
     uint8  SunValid;
     double wbn[3];
+    double HwhlMaxB[3];
+    double HwhlB[3];
     double Mcmd[3];
     double Tcmd[3];
 } OS_PACK Generic_ADCS_GNC_Tlm_Payload_t;

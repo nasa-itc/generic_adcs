@@ -18,6 +18,7 @@ static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generi
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
+static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD, 
     Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t *ACS)
@@ -38,11 +39,14 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Sunsafe.Kp[0], &ACS->Sunsafe.Kp[1], &ACS->Sunsafe.Kp[2], 
         &ACS->Sunsafe.Kr[0], &ACS->Sunsafe.Kr[1], &ACS->Sunsafe.Kr[2], junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf %lf %lf %lf %ld%[^\n]%[\n]", &ACS->Sunsafe.sside[0], &ACS->Sunsafe.sside[1], &ACS->Sunsafe.sside[2], &ACS->Sunsafe.vmax, 
-        &ACS->Sunsafe.cmd_wbn[0], &ACS->Sunsafe.cmd_wbn[1], &ACS->Sunsafe.cmd_wbn[2], &ACS->Sunsafe.h_mgmt, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Sunsafe.sside[0], &ACS->Sunsafe.sside[1], &ACS->Sunsafe.sside[2], &ACS->Sunsafe.vmax, 
+        &ACS->Sunsafe.cmd_wbn[0], &ACS->Sunsafe.cmd_wbn[1], &ACS->Sunsafe.cmd_wbn[2], junk, &newline);
     for (int i = 0; i < 3; i++) {
         ACS->Sunsafe.therr[i] = ACS->Sunsafe.werr[i] = ACS->Sunsafe.Tcmd[i] = 0;
     }
+    // AC Momentum management
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &GNC->Hmgmt.Kb, &GNC->Hmgmt.b_range, &GNC->Hmgmt.loFrac, &GNC->Hmgmt.hiFrac, junk, &newline);
 }
 
 void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Generic_ADCS_DI_Tlm_Payload_t *DI, Generic_ADCS_AD_Tlm_Payload_t *AD, 
@@ -53,6 +57,8 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
 
     AD_to_GNC(AD, GNC);
+    for (int i = 0; i < 3; i++) GNC->HwhlB[i] = DI->Rw.HwhlB[i];
+    for (int i = 0; i < 3; i++) GNC->HwhlMaxB[i] = DI->Rw.H_maxB[i];
 
     switch(GNC->Mode) {
     case BDOT_MODE:
@@ -220,15 +226,53 @@ static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Suns
       }
    }
 
-   if (ACS->h_mgmt) {
-      //AC_h_mgmt(GNC);
+   if (GNC->HmgmtOn) {
+      AC_h_mgmt(GNC);
       for(i = 0; i < 3; i++) {
-         //GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
+        GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
       }
    }
    else {
       for(i = 0; i < 3; i++) {
          GNC->Mcmd[i] = 0.0;
+      }
+   }
+
+}
+
+static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+
+   double Herr[3] = {0.0, 0.0, 0.0};
+   double bvb[3] = {0.0, 0.0, 0.0};
+   double HxB[3] = {0.0, 0.0, 0.0};
+   int i;
+
+   if ( MAGV(GNC->bvb) > GNC->Hmgmt.b_range ) {
+      /*Test if any axis needs to be momentum managed*/
+      for(i=0;i<3;i++) {
+         if (fabs(GNC->HwhlB[i]) > GNC->Hmgmt.hiFrac*fabs(GNC->HwhlMaxB[i])) {
+            GNC->Hmgmt.mm_active[i] = 1;
+         }
+         if (fabs(GNC->HwhlB[i]) < GNC->Hmgmt.loFrac*fabs(GNC->HwhlMaxB[i])) {
+            GNC->Hmgmt.mm_active[i] = 0;
+         }
+      }
+      for(i = 0; i < 3; i++) {
+         Herr[i] = 0.0;
+         if (GNC->Hmgmt.mm_active[i] == 1) {
+            Herr[i] = GNC->HwhlB[i];
+         }
+      }
+      CopyUnitV(GNC->bvb, bvb);
+      VxV(Herr,bvb,HxB);
+      for(i = 0; i < 3; i++) {
+         GNC->Hmgmt.Mcmd[i] = GNC->Hmgmt.Kb * HxB[i] / MAGV(GNC->bvb);
+      }
+   }
+   else {
+      for (i = 0; i < 3; i++) {
+         GNC->Hmgmt.Mcmd[i] = 0.0;
       }
    }
 

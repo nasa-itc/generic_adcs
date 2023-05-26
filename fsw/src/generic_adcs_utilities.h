@@ -14,5 +14,7 @@ void QTxV(double QAB[4],double Va[3],double Vb[3]);
 void UNITV(double V[3]);
 double arccos(double x);
 double Limit(double x,double min, double max);
+void SxV(double S, double V[3], double W[3]);
+double CopyUnitV(double V[3], double W[3]);
 
 #endif
