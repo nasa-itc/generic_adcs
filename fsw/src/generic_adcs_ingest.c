@@ -10,6 +10,7 @@
 #include "generic_fss_msg.h"
 #include "generic_css_msg.h"
 #include "generic_imu_msg.h"
+#include "generic_reaction_wheel_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -18,10 +19,13 @@ static const double NANO = 1.0e-9;
 void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
 {
     char junk[120], newline;
+    // Magnetometer
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Mag.qbs[0], &DI->Mag.qbs[1], &DI->Mag.qbs[2], &DI->Mag.qbs[3], junk, &newline);
+    // Fine Sun Sensor
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Fss.qbs[0], &DI->Fss.qbs[1], &DI->Fss.qbs[2], &DI->Fss.qbs[3], junk, &newline);
+    // Coarse Sun Sensors
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[0].axis[0], &DI->Css.Sensor[0].axis[1], &DI->Css.Sensor[0].axis[2], &DI->Css.Sensor[0].scale, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[1].axis[0], &DI->Css.Sensor[1].axis[1], &DI->Css.Sensor[1].axis[2], &DI->Css.Sensor[1].scale, junk, &newline);
@@ -29,9 +33,26 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[3].axis[0], &DI->Css.Sensor[3].axis[1], &DI->Css.Sensor[3].axis[2], &DI->Css.Sensor[3].scale, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[4].axis[0], &DI->Css.Sensor[4].axis[1], &DI->Css.Sensor[4].axis[2], &DI->Css.Sensor[4].scale, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Css.Sensor[5].axis[0], &DI->Css.Sensor[5].axis[1], &DI->Css.Sensor[5].axis[2], &DI->Css.Sensor[5].scale, junk, &newline);
+    // Inertial Measurement Unit
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Imu.qbs[0], &DI->Imu.qbs[1], &DI->Imu.qbs[2], &DI->Imu.qbs[3], junk, &newline);
     fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &DI->Imu.pos[0], &DI->Imu.pos[1], &DI->Imu.pos[2], junk, &newline);
+    // Reaction Wheels
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    double h_max[3] = {0.0, 0.0, 0.0};
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Rw.whl_axis[0][0], &DI->Rw.whl_axis[0][1], &DI->Rw.whl_axis[0][2], &h_max[0], junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Rw.whl_axis[1][0], &DI->Rw.whl_axis[1][1], &DI->Rw.whl_axis[1][2], &h_max[1], junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->Rw.whl_axis[2][0], &DI->Rw.whl_axis[2][1], &DI->Rw.whl_axis[2][2], &h_max[2], junk, &newline);
+    double H_in_body[3] = {0.0, 0.0, 0.0};
+    for (int i = 0; i < 3; i++) {
+        DI->Rw.H_maxB[i] = 0.0;
+    }
+    for (int whl = 0; whl < 3; whl++) {
+        SxV(h_max[whl], DI->Rw.whl_axis[whl], H_in_body);
+        for (int i = 0; i < 3; i++) {
+            DI->Rw.H_maxB[i] += H_in_body[i];
+        }
+    }
 }
 
 void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
@@ -103,4 +124,19 @@ void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tl
     double acc[3] = {imu->Generic_imu.X_Data.LinearAcc, imu->Generic_imu.Y_Data.LinearAcc, imu->Generic_imu.Z_Data.LinearAcc};
     QxV(Imu->qbs, acc, Imu->acc);
     Imu->valid = 1;
+}
+
+void Generic_ADCS_ingest_generic_rw(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
+{
+    double H_in_body[3] = {0.0, 0.0, 0.0};
+    GENERIC_RW_HkTlm_t *rw = (GENERIC_RW_HkTlm_t *)Msg;
+    for (int i = 0; i < 3; i++) {
+        Rw->HwhlB[i] = 0.0;
+    }
+    for (int whl = 0; whl < 3; whl++) {
+        SxV(rw->Payload.data.momentum[whl], Rw->whl_axis[whl], H_in_body);
+        for (int i = 0; i < 3; i++) {
+            Rw->HwhlB[i] += H_in_body[i];
+        }
+    }
 }

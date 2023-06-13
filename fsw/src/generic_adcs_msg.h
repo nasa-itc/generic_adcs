@@ -11,14 +11,15 @@
 /*
 ** Ground Command Codes
 */
-#define GENERIC_ADCS_NOOP_CC                 0
-#define GENERIC_ADCS_RESET_COUNTERS_CC       1
-#define GENERIC_ADCS_SET_MODE_CC             2
-#define GENERIC_ADCS_SEND_DI_CMD_CC          3
-#define GENERIC_ADCS_SEND_AD_CMD_CC          4
-#define GENERIC_ADCS_SEND_GNC_CMD_CC         5
-#define GENERIC_ADCS_SEND_AC_CMD_CC          6
-#define GENERIC_ADCS_SEND_DO_CMD_CC          7
+#define GENERIC_ADCS_NOOP_CC                    0
+#define GENERIC_ADCS_RESET_COUNTERS_CC          1
+#define GENERIC_ADCS_SET_MODE_CC                2
+#define GENERIC_ADCS_SEND_DI_CMD_CC             3
+#define GENERIC_ADCS_SEND_AD_CMD_CC             4
+#define GENERIC_ADCS_SEND_GNC_CMD_CC            5
+#define GENERIC_ADCS_SEND_AC_CMD_CC             6
+#define GENERIC_ADCS_SEND_DO_CMD_CC             7
+#define GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC 8
 
 /* 
 ** Telemetry Request Command Codes
@@ -41,6 +42,13 @@ typedef struct
     uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
     uint8    Mode;
 } Generic_ADCS_Mode_cmd_t;
+
+typedef struct
+{
+    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
+    uint8    MomentumManagement;
+} Generic_ADCS_MomentumManagement_cmd_t;
+
 
 /*
 ** Generic_ADCS housekeeping type definition
@@ -94,10 +102,18 @@ typedef struct
 
 typedef struct
 {
+    double whl_axis[3][3];
+    double H_maxB[3];
+    double HwhlB[3];
+} OS_PACK Generic_ADCS_DI_Rw_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
     Generic_ADCS_DI_Css_Tlm_Payload_t Css;
     Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
+    Generic_ADCS_DI_Rw_Tlm_Payload_t  Rw;
 } OS_PACK Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct
@@ -150,13 +166,26 @@ typedef struct
 ** Generic_ADCS GNC type definition
 */
 typedef struct {
+    double Kb;
+    double b_range;
+    double loFrac;
+    double hiFrac;
+    uint8  mm_active[3];
+    double Mcmd[3];
+} OS_PACK Generic_ADCS_GNC_Hmgmt_t;
+
+typedef struct {
     double DT;
     double MaxMcmd;
     uint8  Mode;
+    uint8  HmgmtOn;
+    Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double bvb[3];
     double svb[3];
     uint8  SunValid;
     double wbn[3];
+    double HwhlMaxB[3];
+    double HwhlB[3];
     double Mcmd[3];
     double Tcmd[3];
 } OS_PACK Generic_ADCS_GNC_Tlm_Payload_t;

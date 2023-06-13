@@ -265,6 +265,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_IMU_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(GENERIC_RW_APP_HK_TLM_MID, Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_RW_APP_HK_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -319,6 +325,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_IMU_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_imu(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Imu);
+            break;
+        
+        case GENERIC_RW_APP_HK_TLM_MID:
+            Generic_ADCS_ingest_generic_rw(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Rw);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
@@ -396,6 +406,18 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
                 cmd = (Generic_ADCS_Mode_cmd_t *)Generic_ADCS_AppData.MsgPtr; 
                 Generic_ADCS_AppData.GNCPacket.Payload.Mode = cmd->Mode; // Keep the current value in **one** place
                 CFE_EVS_SendEvent(GENERIC_ADCS_SET_MODE_INF_EID, CFE_EVS_INFORMATION, "***ADCS*** Changed mode to: %u", cmd->Mode);
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
+        case GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_MomentumManagement_cmd_t)) == OS_SUCCESS)
+            {
+                Generic_ADCS_MomentumManagement_cmd_t *cmd;
+                cmd = (Generic_ADCS_MomentumManagement_cmd_t *)Generic_ADCS_AppData.MsgPtr; 
+                Generic_ADCS_AppData.GNCPacket.Payload.HmgmtOn = cmd->MomentumManagement; // Keep the current value in **one** place
+                CFE_EVS_SendEvent(GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_INF_EID, CFE_EVS_INFORMATION, "***ADCS*** Changed momentum management to: %u", cmd->MomentumManagement);
             } else {
                 Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
             }
