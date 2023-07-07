@@ -55,7 +55,7 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     }
 }
 
-void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
+void Generic_ADCS_ingest_generic_mag(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
 {
     GENERIC_MAG_Device_tlm_t *mag = (GENERIC_MAG_Device_tlm_t *)Msg;
     double msg_bvs[3] = {mag->Generic_mag.MagneticIntensityX, mag->Generic_mag.MagneticIntensityY, mag->Generic_mag.MagneticIntensityZ};
@@ -67,7 +67,7 @@ void Generic_ADCS_ingest_generic_mag(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Mag_Tl
     /* OS_printf("Generic_ADCS_ingest_generic_mag: %f %f %f\n", Mag->bvb[0], Mag->bvb[1], Mag->bvb[2]); */
 }
 
-void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
+void Generic_ADCS_ingest_generic_fss(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
 {
     GENERIC_FSS_Device_tlm_t *fss = (GENERIC_FSS_Device_tlm_t *)Msg;
 
@@ -88,7 +88,7 @@ void Generic_ADCS_ingest_generic_fss(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Fss_Tl
     }
 }
 
-void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
+void Generic_ADCS_ingest_generic_css(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
 {
     GENERIC_CSS_Device_tlm_t *css = (GENERIC_CSS_Device_tlm_t *)Msg;
     Css->Sensor[0].percenton = css->Generic_css.Voltage[0] * Css->Sensor[0].scale;
@@ -116,7 +116,7 @@ void Generic_ADCS_ingest_generic_css(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Css_Tl
     }
 }
 
-void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
+void Generic_ADCS_ingest_generic_imu(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
 {
     GENERIC_IMU_Device_tlm_t *imu = (GENERIC_IMU_Device_tlm_t *)Msg;
     double wsn[3] = {imu->Generic_imu.X_Data.AngularAcc, imu->Generic_imu.Y_Data.AngularAcc, imu->Generic_imu.Z_Data.AngularAcc};
@@ -126,7 +126,7 @@ void Generic_ADCS_ingest_generic_imu(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Imu_Tl
     Imu->valid = 1;
 }
 
-void Generic_ADCS_ingest_generic_rw(CFE_SB_MsgPtr_t Msg, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
+void Generic_ADCS_ingest_generic_rw(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
 {
     double H_in_body[3] = {0.0, 0.0, 0.0};
     GENERIC_RW_HkTlm_t *rw = (GENERIC_RW_HkTlm_t *)Msg;
