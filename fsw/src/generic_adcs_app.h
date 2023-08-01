@@ -47,7 +47,7 @@ typedef struct
     /*
     ** Operational data  - not reported in housekeeping
     */
-    CFE_SB_MsgPtr_t MsgPtr;             /* Pointer to msg received on software bus */
+    CFE_MSG_Message_t * MsgPtr;             /* Pointer to msg received on software bus */
     CFE_SB_PipeId_t CmdPipe;            /* Pipe Id for HK command pipe */
     uint32 RunStatus;                   /* App run status for controlling the application state */
 
@@ -63,10 +63,10 @@ extern Generic_ADCS_AppData_t Generic_ADCS_AppData; /* GENERIC_ADCS App Data */
 **
 ** Local function prototypes.
 **
-** Note: Except for the entry point (Generic_ADCS_AppMain), these
+** Note: Except for the entry point (ADCS_AppMain), these
 **       functions are not called from any other source module.
 */
-void  Generic_ADCS_AppMain(void);
+void  ADCS_AppMain(void);
 
 #endif
 
