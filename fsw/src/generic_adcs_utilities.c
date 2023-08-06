@@ -94,3 +94,30 @@ double Limit(double x,double min, double max)
 {
       return(x < min ? min : (x > max ? max : x));
 }
+/**********************************************************************/
+/*  Scalar times 3x1 Vector                                           */
+void SxV(double S, double V[3], double W[3])
+{
+      W[0] = S*V[0];
+      W[1] = S*V[1];
+      W[2] = S*V[2];
+}
+/**********************************************************************/
+/*  Copy and normalize a 3-vector.  Return its magnitude              */
+double CopyUnitV(double V[3], double W[3])
+{
+      double A;
+
+      A=sqrt(V[0]*V[0]+V[1]*V[1]+V[2]*V[2]);
+      if (A > 0.0) {
+         W[0] = V[0]/A;
+         W[1] = V[1]/A;
+         W[2] = V[2]/A;
+      }
+      else {
+         W[0] = 0.0;
+         W[1] = 0.0;
+         W[2] = 0.0;
+      }
+      return(A);
+}

@@ -39,8 +39,8 @@ static void send_mtb_commands(double Mcmd[3], Generic_ADCS_DO_Trq_TlmPayload_t *
     if ((MtbPctOnCmd->Direction_0 != CurrentMtb[0].Direction) || (MtbPctOnCmd->PercentOn_0 != CurrentMtb[0].PercentOn) || 
         (MtbPctOnCmd->Direction_1 != CurrentMtb[1].Direction) || (MtbPctOnCmd->PercentOn_1 != CurrentMtb[1].PercentOn) || 
         (MtbPctOnCmd->Direction_2 != CurrentMtb[2].Direction) || (MtbPctOnCmd->PercentOn_2 != CurrentMtb[2].PercentOn)) {
-        CFE_SB_TimeStampMsg((CFE_SB_Msg_t *)MtbPctOnCmd);
-        CFE_SB_SendMsg((CFE_SB_Msg_t *)MtbPctOnCmd);
+        CFE_SB_TimeStampMsg((CFE_MSG_Message_t *)MtbPctOnCmd);
+        CFE_SB_TransmitMsg((CFE_MSG_Message_t *)MtbPctOnCmd, true);
         CurrentMtb[0].Direction = MtbPctOnCmd->Direction_0;
         CurrentMtb[0].PercentOn = MtbPctOnCmd->PercentOn_0;
         CurrentMtb[1].Direction = MtbPctOnCmd->Direction_1;
@@ -72,8 +72,8 @@ static void send_rw_commands(double Tcmd[3], Generic_ADCS_DO_Rw_TlmPayload_t *DO
         if (torque != CurrentRw[i]) {
             RwCmd->data = torque;
             RwCmd->wheel_number = i;
-            CFE_SB_TimeStampMsg((CFE_SB_Msg_t *)RwCmd);
-            CFE_SB_SendMsg((CFE_SB_Msg_t *)RwCmd);
+            CFE_SB_TimeStampMsg((CFE_MSG_Message_t *)RwCmd);
+            CFE_SB_TransmitMsg((CFE_MSG_Message_t *)RwCmd, true);
             CurrentRw[i] = torque;
         }
     }
