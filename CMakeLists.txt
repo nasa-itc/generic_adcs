@@ -18,6 +18,8 @@ include_directories(../generic_torquer/fsw/platform_inc)
 include_directories(../generic_torquer/fsw/src)
 include_directories(../generic_reaction_wheel/fsw/platform_inc)
 include_directories(../generic_reaction_wheel/fsw/src)
+include_directories(../generic_star_tracker/fsw/platform_inc)
+include_directories(../generic_star_tracker/fsw/src)
 include_directories(${hwlib_MISSION_DIR}/fsw/public_inc)
 
 aux_source_directory(fsw/src APP_SRC_FILES)
