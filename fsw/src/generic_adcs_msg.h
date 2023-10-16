@@ -20,6 +20,7 @@
 #define GENERIC_ADCS_SEND_AC_CMD_CC             6
 #define GENERIC_ADCS_SEND_DO_CMD_CC             7
 #define GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC 8
+#define GENERIC_ADCS_INERTIAL_QUATERNION_CC     9
 
 /* 
 ** Telemetry Request Command Codes
@@ -42,6 +43,13 @@ typedef struct
     CFE_MSG_CommandHeader_t CmdHeader;
     uint8    Mode;
 } Generic_ADCS_Mode_cmd_t;
+
+typedef struct
+{
+    /* Every command requires a header used to identify it */
+    CFE_MSG_CommandHeader_t CmdHeader;
+    double                  qbn[4];
+} Generic_ADCS_Quat_Cmd_t;
 
 typedef struct
 {

@@ -51,6 +51,8 @@ typedef struct
     CFE_SB_PipeId_t CmdPipe;            /* Pipe Id for HK command pipe */
     uint32 RunStatus;                   /* App run status for controlling the application state */
 
+    /* Internal state data */
+    double inertial_qbn[4];
 } Generic_ADCS_AppData_t;
 
 /*
