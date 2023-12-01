@@ -166,9 +166,15 @@ typedef struct
 
 typedef struct
 {
+    double qbn[4];
+} __attribute__((packed)) Generic_ADCS_AD_ST_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
+    Generic_ADCS_AD_ST_Tlm_Payload_t  St;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct

@@ -151,5 +151,5 @@ void Generic_ADCS_ingest_generic_st(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_St_
 
     St->valid = st->Generic_star_tracker.IsValid;
     double q[4] = {st->Generic_star_tracker.Q0, st->Generic_star_tracker.Q1, st->Generic_star_tracker.Q2, st->Generic_star_tracker.Q3};
-    QxQ(q, St->qbs, St->q);
+    QTxQ(St->qbs, q, St->q);
 }

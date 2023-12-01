@@ -13,6 +13,7 @@
 
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
+static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_ST);
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS, 
     Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
@@ -54,6 +55,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
 {
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
+    AD_st(&DI->St, &AD->St);
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
 
     AD_to_GNC(AD, GNC);
@@ -111,6 +113,11 @@ static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS
     for (int i = 0; i < 3; i++) {
         AD_Mag->bvb[i] = DI_Mag->bvb[i];
     }
+}
+
+static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_ST)
+{
+    for (int i = 0; i < 4; i++) AD_ST->qbn[i] = DI_ST->q[i];
 }
 
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_Fss, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_Css, Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol)
