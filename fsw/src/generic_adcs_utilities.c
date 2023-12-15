@@ -4,6 +4,7 @@
 **
 *******************************************************************************/
 
+#include <stdio.h>
 #include <math.h>
 #include "generic_adcs_utilities.h"
 
@@ -96,6 +97,34 @@ void QTxV(double QAB[4],double Va[3],double Vb[3])
       Vb[2] = (-qq[0][0]-qq[1][1]+qq[2][2]+qq[3][3])*Va[2]
                           + 2.0*((qq[0][2]-qq[1][3])*Va[0]
                                 +(qq[1][2]+qq[0][3])*Va[1]);
+}
+/**********************************************************************/
+/*  Normalize a quaternion                                            */
+void UNITQ(double Q[4])
+{
+      double A;
+
+      A=sqrt(Q[0]*Q[0]+Q[1]*Q[1]+Q[2]*Q[2]+Q[3]*Q[3]);
+      if (A <= 0.0) {
+         printf("Divide by zero in UNITQ (Line %d of %s).  You'll want to fix that.\n", __LINE__, __FILE__);
+      }
+      else {
+         Q[0]/=A;
+         Q[1]/=A;
+         Q[2]/=A;
+         Q[3]/=A;
+      }
+}
+/**********************************************************************/
+/*  Rectify a quaternion, forcing q[3] to be positive                 */
+void RECTIFYQ(double Q[4])
+{
+      if(Q[3] < 0.0) {
+         Q[0] = -Q[0];
+         Q[1] = -Q[1];
+         Q[2] = -Q[2];
+         Q[3] = -Q[3];
+      }
 }
 /**********************************************************************/
 /*  Normalize a 3-vector if it is non-zero.                           */

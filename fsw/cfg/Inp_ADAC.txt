@@ -8,5 +8,8 @@
 !!!!!!!!!!!!!!! AC Sunsafe !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.0047 0.0047 0.0047 0.1329 0.1329 0.1329 ! Kp, Kr gains
 1.0 0.0 0.0 0.1 0.0 0.0 0.0               ! sside, vmax, cmd_wbn
+!!!!!!!!!!!!!!! AC Inertial !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+0.0 0.0 0.0 1.0 10 1                      ! qbn_cmd, phiErr max, h_mgmt on
+0.04 0.04 0.04 0.65 0.65 0.65 0.0 0.0 0.0 ! Kp, Kd, Ki gains
 !!!!!!!!!!!!!!! AC Momentum Management !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 1.0 4.096E-6 0.1 0.5                      ! Kb, Bfield range, wheel capacity fraction below which MM disabled, fraction above which enabled

@@ -210,6 +210,8 @@ typedef struct {
     double HwhlB[3];
     double Mcmd[3];
     double Tcmd[3];
+    double qbn[4];
+    double qErr[4];
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
@@ -246,8 +248,26 @@ typedef struct {
 } __attribute__((packed)) Generic_ADCS_AC_Sunsafe_Tlm_t;
 
 typedef struct {
+   /* Inputs*/
+   double Kp[3];
+   double Kr[3];
+   double Ki[3];
+   double phiErr_max;
+   double qbn_cmd[4];
+   uint8 h_mgmt;
+
+   /* Internal Variables */
+   double therr[3];
+   double sumtherr[3];
+   double qErr[4];
+   double werr[3];
+   double Tcmd[3];
+} __attribute__((packed)) Generic_ADCS_AC_inertialType;
+
+typedef struct {
     Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
     Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
+    Generic_ADCS_AC_inertialType       Inertial;
 } __attribute__((packed)) Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct {
