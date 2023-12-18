@@ -105,10 +105,7 @@ void UNITQ(double Q[4])
       double A;
 
       A=sqrt(Q[0]*Q[0]+Q[1]*Q[1]+Q[2]*Q[2]+Q[3]*Q[3]);
-      if (A <= 0.0) {
-         printf("Divide by zero in UNITQ (Line %d of %s).  You'll want to fix that.\n", __LINE__, __FILE__);
-      }
-      else {
+      if (A > 0.0) {
          Q[0]/=A;
          Q[1]/=A;
          Q[2]/=A;

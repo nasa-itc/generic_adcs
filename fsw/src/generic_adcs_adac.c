@@ -48,7 +48,9 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
     }
     // AC Inertial
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
-    fscanf(in, "%lf %lf %lf %lf %lf %c%[^\n]%[\n]", &ACS->Inertial.qbn_cmd[0], &ACS->Inertial.qbn_cmd[1], &ACS->Inertial.qbn_cmd[2], &ACS->Inertial.qbn_cmd[3], &ACS->Inertial.phiErr_max, &ACS->Inertial.h_mgmt, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf %lf %c%[^\n]%[\n]", 
+        &Generic_ADCS_AppData.inertial_qbn[0], &Generic_ADCS_AppData.inertial_qbn[1], &Generic_ADCS_AppData.inertial_qbn[2], &Generic_ADCS_AppData.inertial_qbn[3], 
+        &ACS->Inertial.phiErr_max, &ACS->Inertial.h_mgmt, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf %lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Inertial.Kp[0], &ACS->Inertial.Kp[1], &ACS->Inertial.Kp[2], &ACS->Inertial.Kr[0], &ACS->Inertial.Kr[1], &ACS->Inertial.Kr[2], 
         &ACS->Inertial.Ki[0], &ACS->Inertial.Ki[1], &ACS->Inertial.Ki[2], junk, &newline );
     // AC Momentum management
@@ -78,6 +80,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
         break;
 
     case INERTIAL_MODE:
+        for (int i = 0; i < 4; i++) ACS->Inertial.qbn_cmd[i] = Generic_ADCS_AppData.inertial_qbn[i];
         AC_inertial(GNC, &ACS->Inertial);
         break;
 
