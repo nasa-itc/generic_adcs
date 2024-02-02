@@ -17,6 +17,7 @@ void QTxV(double QAB[4],double Va[3],double Vb[3]);
 void UNITQ(double Q[4]);
 void UNITV(double V[3]);
 void RECTIFYQ(double Q[4]);
+void C2Q(double C[3][3], double Q[4]);
 double arccos(double x);
 double Limit(double x,double min, double max);
 void SxV(double S, double V[3], double W[3]);

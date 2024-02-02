@@ -196,6 +196,65 @@ typedef struct {
     double Mcmd[3];
 } __attribute__((packed)) Generic_ADCS_GNC_Hmgmt_t;
 
+enum TargetVec
+{
+   POS,
+   VEL,
+   H,
+   SUN_LOS,
+   FLOATING
+};
+
+struct GNCCmdType {
+   /*~ Parameters ~*/
+
+   long init;
+
+   double qbn[4];  /*Inertial to body quaternion command*/
+   double qbl[4];  /*LVLH to body quaternon command*/
+   double wbn[3];  /*Angular veloicty command*/
+
+   double Kp[3]; /* Proportional gain */
+   double Kr[3]; /* Derivative gain */
+   double Ki[3]; /* Integral gain */
+   double Kb;    /* Magnetic gain */
+   double Kprec;
+   double Knute;
+   double Kspin;
+   double kwhl;
+
+   double spinRate;
+   double Hlmt;
+
+   double Hmax[3];
+   double Tmax[3];
+
+   double vmax;
+   double b_range;
+   double phiErr_max;
+   double threshold_angle;
+   long whl_preserve_direction;
+   long mtb_preserve_direction;
+   long h_mgmt_enable;
+
+   enum TargetVec targetPrimary;
+   enum TargetVec targetSecondary;
+   double bodyPrimaryVec[3];
+   double bodySecondaryVec[3];
+
+   double primary_axis_body[3];   /*Primary Body axis for Primary Target per mode*/
+   double secondary_axis_body[3]; /*Secondary Body axis for Secondary Target per mode */
+   double primary_axis_target[3];   /*Primary Body axis for Primary Target per mode*/
+   double secondary_axis_target[3]; /*Secondary Body axis for Secondary Target per mode */
+   int primary_ID;                  /*Primary Target ID*/
+   int secondary_ID;               /*Secondary Target ID */
+
+   double dt;
+   double delta;
+   double tg;
+
+} __attribute__((packed));
+
 typedef struct {
     double DT;
     double MaxMcmd;
@@ -203,8 +262,11 @@ typedef struct {
     uint8  HmgmtOn;
     Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double bvb[3];
+    double svn[3];
     double svb[3];
     uint8  SunValid;
+    double PosN[3];
+    double VelN[3];
     double wbn[3];
     double HwhlMaxB[3];
     double HwhlB[3];
@@ -212,6 +274,8 @@ typedef struct {
     double Tcmd[3];
     double qbn[4];
     double qErr[4];
+    double qbn_init[4];
+    struct GNCCmdType Cmd[20];
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
@@ -265,9 +329,36 @@ typedef struct {
 } __attribute__((packed)) Generic_ADCS_AC_inertialType;
 
 typedef struct {
+   /* Inputs*/
+   double Kp[3];
+   double Kr[3];
+   double Ki[3];
+   double threshold_angle;
+   double phiErr_max;
+   long h_mgmt;
+
+   enum TargetVec targetPrimary;
+   enum TargetVec targetSecondary;
+
+   /* Internal Variables */
+   double qbn_cmd[4];
+   double primaryTarget[3]; /*Primary Target Vector*/
+   double secondaryTarget[3]; /*Secondary Target Vector*/
+   double primaryBody[3]; /*Primary Target Vector*/
+   double secondaryBody[3]; /*Secondary Target Vector*/
+   double wbn_cmd[3];
+   double qErr[4];
+   double werr[3];
+   double Tcmd[3];
+   double therr[3];
+   double sumtherr[3];
+} __attribute__((packed)) Generic_ADCS_AC_TwoAxisType;
+
+typedef struct {
     Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
     Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
-    Generic_ADCS_AC_inertialType       Inertial;
+    Generic_ADCS_AC_inertialType  Inertial;
+    Generic_ADCS_AC_TwoAxisType   TwoAxis;
 } __attribute__((packed)) Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct {

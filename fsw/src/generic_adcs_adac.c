@@ -21,6 +21,7 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
 static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_inertialType *ACS);
+static void AC_twoaxis(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_TwoAxisType *ACS);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD, 
     Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t *ACS)
@@ -82,6 +83,10 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     case INERTIAL_MODE:
         for (int i = 0; i < 4; i++) ACS->Inertial.qbn_cmd[i] = Generic_ADCS_AppData.inertial_qbn[i];
         AC_inertial(GNC, &ACS->Inertial);
+        break;
+
+    case TWO_AXIS_MODE:
+        AC_twoaxis(GNC, &ACS->TwoAxis);
         break;
 
     case PASSIVE_MODE:
@@ -353,6 +358,256 @@ static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_ine
         ACS->Tcmd[i] = ACS->Kp[i] * ACS->therr[i] + ACS->Kr[i] * ACS->werr[i] + ACS->Ki[i] * ACS->sumtherr[i];
     }
 
+    for (i = 0; i < 3; i++)
+    {
+        GNC->Tcmd[i] = -ACS->Tcmd[i];
+    }
+
+    if (ACS->h_mgmt) {
+      AC_h_mgmt(GNC);
+      for(i = 0; i < 3; i++) {
+          GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
+      }
+    }
+    else {
+      for(i = 0; i < 3; i++) {
+          GNC->Mcmd[i] = 0.0;
+      }
+    }
+
+}
+
+static void check_collinearity(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_TwoAxisType *ACS)
+{
+    double tgt_angle = 0.0, bdy_angle = 0.0, primAngle = 0.0;
+    double primTgt_body[3] = {0.0, 0.0, 0.0}, primTgt_body_init[3] = {0.0, 0.0, 0.0};
+
+    bdy_angle = arccos(fabs(VoV(ACS->primaryBody, ACS->secondaryTarget)));
+    tgt_angle = arccos(fabs(VoV(ACS->primaryTarget, ACS->secondaryTarget)));
+
+    if (bdy_angle < EPS || MAGV(ACS->secondaryBody) < EPS)
+    {
+        /*If the primary and secondary body are collinear or secondarybody is CROSS_PRIMARY check the curren tangle
+        between primary body and primary target*/
+        QxV(GNC->qbn, ACS->primaryTarget, primTgt_body);
+        UNITV(primTgt_body);
+        primAngle = arccos(fabs(VoV(ACS->primaryBody, primTgt_body)));
+        if (primAngle > EPS)
+        {
+            QxV(GNC->qbn_init, ACS->primaryTarget, primTgt_body_init);
+            VxV(ACS->primaryBody, primTgt_body_init, ACS->secondaryBody);
+            UNITV(ACS->secondaryBody);
+        }
+        else
+        {
+            if (arccos(fabs(ACS->primaryBody[1])) > EPS)
+            {
+                ACS->secondaryBody[0] = 0.0;
+                ACS->secondaryBody[1] = 1.0;
+                ACS->secondaryBody[2] = 0.0;
+            }
+            else
+            {
+                ACS->secondaryBody[0] = 1.0;
+                ACS->secondaryBody[1] = 0.0;
+                ACS->secondaryBody[2] = 0.0;
+            }
+        }
+
+        QTxV(GNC->qbn, ACS->secondaryBody, ACS->secondaryTarget);
+        UNITV(ACS->secondaryTarget);
+    }
+    else if (tgt_angle < ACS->threshold_angle)
+    {
+        QTxQ(GNC->qbn, ACS->secondaryBody, ACS->secondaryTarget);
+        UNITV(ACS->secondaryTarget);
+    }
+}
+static void calc_qbn(Generic_ADCS_AC_TwoAxisType *ACS)
+{
+    int i;
+    double tgtX_b[3] = {0.0, 0.0, 0.0}, tgtY_b[3] = {0.0, 0.0, 0.0}, tgtZ_b[3] = {0.0, 0.0, 0.0};
+    double tgtX_n[3] = {0.0, 0.0, 0.0}, tgtY_n[3] = {0.0, 0.0, 0.0}, tgtZ_n[3] = {0.0, 0.0, 0.0};
+    double C_tb[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, C_tn[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+    double q_tb[4] = {0,0,0,1}, q_tn[4] = {0,0,0,1};
+
+    for (i = 0; i < 3; i++)
+    {
+        tgtX_b[i] = ACS->primaryBody[i];
+        tgtX_n[i] = ACS->primaryTarget[i];
+    }
+    VxV(ACS->primaryBody, ACS->secondaryBody, tgtZ_b);
+    VxV(ACS->primaryTarget, ACS->secondaryTarget, tgtZ_n);
+    VxV(tgtZ_b, tgtX_b, tgtY_b);
+    VxV(tgtZ_n, tgtX_n, tgtY_n);
+
+    UNITV(tgtX_b);
+    UNITV(tgtY_b);
+    UNITV(tgtZ_b);
+    UNITV(tgtX_n);
+    UNITV(tgtY_n);
+    UNITV(tgtZ_n);
+
+    /*construct body to target DCM and Inertial to Target DCMS*/
+    for (i = 0; i < 3; i++)
+    {
+        C_tb[0][i] = tgtX_b[i];
+        C_tb[1][i] = tgtY_b[i];
+        C_tb[2][i] = tgtZ_b[i];
+        C_tn[0][i] = tgtX_n[i];
+        C_tn[1][i] = tgtY_n[i];
+        C_tn[2][i] = tgtZ_n[i];
+    }
+    C2Q(C_tb, q_tb);
+    C2Q(C_tn, q_tn);
+
+    /* Calculate Inertial to Body Quaternion */
+    QTxQ(q_tb, q_tn, ACS->qbn_cmd);
+    UNITQ(ACS->qbn_cmd);
+}
+
+#define MU (3.986004418E14)        /* [m^2/s^2] Geocentric gravity constant */
+static void setTargetVec(enum TargetVec targetVec_enum, Generic_ADCS_GNC_Tlm_Payload_t *GNC, double bodyVec[3], double targetVector[3], double rate[3])
+{
+    double h[3] = {0.0, 0.0, 0.0}, g[3] = {0.0, 0.0, 0.0};
+    double rmag_sq = 0.0, rmag = 0.0, vmag_sq = 0.0;
+
+    switch (targetVec_enum)
+    {
+    case POS:
+        targetVector[0] = GNC->PosN[0];
+        targetVector[1] = GNC->PosN[1];
+        targetVector[2] = GNC->PosN[2];
+        UNITV(targetVector);
+        VxV(GNC->PosN, GNC->VelN, h);
+        rmag_sq = VoV(GNC->PosN, GNC->PosN);
+        rate[0] = h[0] / rmag_sq;
+        rate[1] = h[1] / rmag_sq;
+        rate[2] = h[2] / rmag_sq;
+        break;
+    case VEL:
+        targetVector[0] = GNC->VelN[0];
+        targetVector[1] = GNC->VelN[1];
+        targetVector[2] = GNC->VelN[2];
+        UNITV(targetVector);
+        rmag = MAGV(GNC->PosN);
+        g[0] = -MU * GNC->PosN[0] / (rmag * rmag * rmag);
+        g[1] = -MU * GNC->PosN[1] / (rmag * rmag * rmag);
+        g[2] = -MU * GNC->PosN[2] / (rmag * rmag * rmag);
+        VxV(GNC->VelN, g, h);
+        vmag_sq = VoV(GNC->VelN, GNC->VelN);
+        rate[0] = h[0] / vmag_sq;
+        rate[1] = h[1] / vmag_sq;
+        rate[2] = h[2] / vmag_sq;
+        break;
+    case H: /*Orbit Angular Momentum Vector direction*/
+        VxV(GNC->PosN, GNC->VelN, targetVector);
+        UNITV(targetVector);
+        rate[0] = 0.0;
+        rate[1] = 0.0;
+        rate[2] = 0.0;
+        break;
+    case SUN_LOS:
+        targetVector[0] = GNC->svn[0];
+        targetVector[1] = GNC->svn[1];
+        targetVector[2] = GNC->svn[2];
+        UNITV(targetVector);
+        rate[0] = 0.0;
+        rate[1] = 0.0;
+        rate[2] = 0.0;
+        break;
+    case FLOATING:
+        QTxV(GNC->qbn, bodyVec, targetVector);
+        rate[0] = 0.0;
+        rate[1] = 0.0;
+        rate[2] = 0.0;
+        break;
+    default:
+        fprintf(stderr, "%d is not a Valid Option for Target Vector Choice!\n", targetVec_enum);
+        QTxV(GNC->qbn, bodyVec, targetVector);
+        rate[0] = 0.0;
+        rate[1] = 0.0;
+        rate[2] = 0.0;
+        break;
+    }
+}
+static void AC_twoaxis(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_TwoAxisType *ACS)
+{
+    int i;
+    double qErrLimited[4] = {0.0, 0.0, 0.0, 0.0}; /* Initialize Error quaterion for internal use */
+    double e_axis[3] = {0.0, 0.0, 0.0};           /* Initialze Eigen axis of the Body to Body quaternion*/
+    double phiErr = 0.0;                          /* Intialize angular error of Body to Body quaternion */
+    double primaryRate[3] = {0.0, 0.0, 0.0};
+    double secondaryRate[3] = {0.0, 0.0, 0.0};
+    double wn_cmd[3] = {0.0, 0.0, 0.0}; /* Commanded interial angular velocity expressed in inertial frame*/
+    double rateDotAxis = 0;
+
+    for(i=0;i<3;i++)
+    {
+        ACS->primaryBody[i] = GNC->Cmd[GNC->Mode].primary_axis_body[i];
+        ACS->secondaryBody[i] = GNC->Cmd[GNC->Mode].secondary_axis_body[i];
+    }
+    /*Set Primary/Seconary Vectors*/
+    setTargetVec(ACS->targetPrimary, GNC, ACS->primaryBody, ACS->primaryTarget, primaryRate);
+    setTargetVec(ACS->targetSecondary, GNC, ACS->secondaryTarget, ACS->secondaryTarget, secondaryRate);
+
+
+    /*check collinearity*/
+    check_collinearity(GNC, ACS);
+
+    /*calcualte commanded quaternon*/
+    calc_qbn(ACS);
+
+    /*calculate rate commands*/
+    rateDotAxis = VoV(secondaryRate, ACS->primaryTarget);
+    for (i = 0; i < 3; i++)
+    {
+        wn_cmd[i] = primaryRate[i] + rateDotAxis * ACS->primaryTarget[i];
+    }
+    QTxV(GNC->qbn, wn_cmd, ACS->wbn_cmd);
+
+    /*..Form attitude error signals */
+    QxQT(ACS->qbn_cmd, GNC->qbn, ACS->qErr);
+    UNITQ(ACS->qErr);
+    RECTIFYQ(ACS->qErr);
+
+    for (i = 0; i < 4; i++)
+    {
+        GNC->qErr[i] = ACS->qErr[i];
+    }
+
+    /*..Limit B<-B quaterion Error */
+    phiErr = 2.0 * arccos(ACS->qErr[3]);
+    if (phiErr > ACS->phiErr_max)
+    {
+        phiErr = ACS->phiErr_max;
+        e_axis[0] = ACS->qErr[0];
+        e_axis[1] = ACS->qErr[1];
+        e_axis[2] = ACS->qErr[2];
+        UNITV(e_axis);
+        for (i = 0; i < 3; i++)
+        {
+            qErrLimited[i] = e_axis[i] * sin(phiErr / 2.0);
+        }
+        qErrLimited[3] = cos(phiErr / 2.0);
+    }
+    else
+    {
+        for (i = 0; i < 4; i++)
+        {
+            qErrLimited[i] = ACS->qErr[i];
+        }
+    }
+
+    /*..Compute attittude/rate errors, Apply PD Control Law and compute minimum Torque margin */
+    for (i = 0; i < 3; i++)
+    {
+        ACS->therr[i] = 2.0 * qErrLimited[i];
+        ACS->sumtherr[i] = ACS->sumtherr[i] + ACS->therr[i];
+        ACS->werr[i] = ACS->wbn_cmd[i] - GNC->wbn[i];
+        ACS->Tcmd[i] = ACS->Kp[i] * ACS->therr[i] + ACS->Kr[i] * ACS->werr[i] + ACS->Ki[i] * ACS->sumtherr[i];
+    }
+    /*..Apply limited torque to wheels*/
     for (i = 0; i < 3; i++)
     {
         GNC->Tcmd[i] = -ACS->Tcmd[i];
