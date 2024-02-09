@@ -18,11 +18,12 @@ COMMAND GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC BIG_ENDIAN "Generic ADCS Set Mode 
   APPEND_PARAMETER CCSDS_LENGTH        16 UINT MIN_UINT16 MAX_UINT16 2      "CCSDS Packet Data Length" 
   APPEND_PARAMETER CCSDS_FC            8  UINT MIN_UINT8 MAX_UINT8 2        "CCSDS Command Function Code" 
   APPEND_PARAMETER CCSDS_CHECKSUM      8  UINT MIN_UINT8 MAX_UINT8 0        "CCSDS Command Checksum"
-  APPEND_PARAMETER GNC_MODE            8 UINT 0          3         0        "GN&C Mode"
+  APPEND_PARAMETER GNC_MODE            8 UINT 0          4         0        "GN&C Mode"
     STATE PASSIVE                 0
     STATE BDOT_MODE               1
     STATE SUNSAFE_MODE            2
     STATE INERTIAL_MODE           3
+    STATE TWO_AXIS_MODE           4
 
 COMMAND GENERIC_ADCS GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC BIG_ENDIAN "Generic ADCS Set Momentum Management Command"
   APPEND_PARAMETER CCSDS_STREAMID      16 UINT MIN_UINT16 MAX_UINT16 0x1940 "CCSDS Packet Identification" 
@@ -79,6 +80,31 @@ COMMAND GENERIC_ADCS GENERIC_ADCS_SET_INERTIAL_QUATERNION_CC <%= CosmosCfsConfig
   APPEND_PARAMETER GNC_INER_QUAT2      64 FLOAT -1        1          0      "Inertial Quaternion Component 2"
   APPEND_PARAMETER GNC_INER_QUAT3      64 FLOAT -1        1          0      "Inertial Quaternion Component 3"
   APPEND_PARAMETER GNC_INER_QUAT4      64 FLOAT -1        1          1      "Inertial Quaternion Component 4 (real part)"
+
+COMMAND GENERIC_ADCS GENERIC_ADCS_SET_TWO_AXIS_PARAMS_CC <%= CosmosCfsConfig::PROCESSOR_ENDIAN %> "Generic ADCS Set Two Axis Parameters Command"
+  APPEND_PARAMETER CCSDS_STREAMID      16 UINT 0x1940     0x1940     0x1940 "CCSDS Packet Identification"	  BIG_ENDIAN
+  APPEND_PARAMETER CCSDS_SEQUENCE      16 UINT 0xC000     MAX_UINT16 0xC000 "CCSDS Packet Sequence Control"	BIG_ENDIAN 
+  APPEND_PARAMETER CCSDS_LENGTH        16 UINT 0x0035     0x0035     0x0035 "CCSDS Packet Data Length"	    BIG_ENDIAN 
+  APPEND_PARAMETER CCSDS_FC             8 UINT 10         10         10     "CCSDS Command Function Code" 
+  APPEND_PARAMETER CCSDS_CHECKSUM       8 UINT MIN_UINT8 MAX_UINT8   0      "CCSDS Command Checksum"
+  APPEND_PARAMETER PRIMARY_BODY_X       64 FLOAT -1       1          1       "Two Axis Primary Body Vector, X Component"
+  APPEND_PARAMETER PRIMARY_BODY_Y       64 FLOAT -1       1          0       "Two Axis Primary Body Vector, Y Component"
+  APPEND_PARAMETER PRIMARY_BODY_Z       64 FLOAT -1       1          0       "Two Axis Primary Body Vector, Z Component"
+  APPEND_PARAMETER SECONDARY_BODY_X     64 FLOAT -1       1          0       "Two Axis Secondary Body Vector, X Component"
+  APPEND_PARAMETER SECONDARY_BODY_Y     64 FLOAT -1       1          1       "Two Axis Secondary Body Vector, Y Component"
+  APPEND_PARAMETER SECONDARY_BODY_Z     64 FLOAT -1       1          0       "Two Axis Secondary Body Vector, Z Component"
+  APPEND_PARAMETER TGT_PRIMARY          8 UINT 0          4          0      "Two Axis Primary Target"
+    STATE POS                     0
+    STATE VEL                     1
+    STATE H                       2
+    STATE SUN_LOS                 3
+    STATE FLOATING                4
+  APPEND_PARAMETER TGT_SECONDARY        8 UINT 0          4          3      "Two Axis Secondary Target"
+    STATE POS                     0
+    STATE VEL                     1
+    STATE H                       2
+    STATE SUN_LOS                 3
+    STATE FLOATING                4
 
 COMMAND GENERIC_ADCS GENERIC_ADCS_REQ_HK BIG_ENDIAN "Generic ADCS Request HK Packet Command"
   APPEND_PARAMETER CCSDS_STREAMID      16 UINT MIN_UINT16 MAX_UINT16 0x1941 "CCSDS Packet Identification" 

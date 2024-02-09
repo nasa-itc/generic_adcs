@@ -12,6 +12,7 @@
 #include "generic_imu_msg.h"
 #include "generic_reaction_wheel_msg.h"
 #include "generic_star_tracker_msg.h"
+#include "novatel_oem615_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -152,4 +153,20 @@ void Generic_ADCS_ingest_generic_st(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_St_
     St->valid = st->Generic_star_tracker.IsValid;
     double q[4] = {st->Generic_star_tracker.Q0, st->Generic_star_tracker.Q1, st->Generic_star_tracker.Q2, st->Generic_star_tracker.Q3};
     QTxQ(St->qbs, q, St->q);
+}
+
+void Generic_ADCS_ingest_generic_gps(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps)
+{
+    NOVATEL_OEM615_Device_tlm_t *gps = (NOVATEL_OEM615_Device_tlm_t *)Msg;
+    // https://space.stackexchange.com/questions/38807/transform-eci-to-ecef - Use rough approximation answer:
+    double DT = gps->Novatel_oem615.Weeks * 7 + (gps->Novatel_oem615.SecondsIntoWeek + gps->Novatel_oem615.Fractions - 9 + 27) / 86400.0 - 7300; /* 7300 = Days from GPS Epoch to J2000 Epoch; 9 leap seconds before 1980, 27 total as of 2/7/2024 */;
+    double gamma = (360.9856123035484*DT + 280.46) * M_PI / 180.0;
+    double costheta = cos(gamma);
+    double sintheta = sin(gamma);
+    Gps->PosN[0] = gps->Novatel_oem615.ECEFX * costheta - gps->Novatel_oem615.ECEFY * sintheta;
+    Gps->PosN[1] = gps->Novatel_oem615.ECEFX * sintheta + gps->Novatel_oem615.ECEFY * costheta;
+    Gps->PosN[2] = gps->Novatel_oem615.ECEFZ;
+    Gps->VelN[0] = gps->Novatel_oem615.VelX * costheta - gps->Novatel_oem615.VelY * sintheta;
+    Gps->VelN[1] = gps->Novatel_oem615.VelX * sintheta + gps->Novatel_oem615.VelY * costheta;
+    Gps->VelN[2] = gps->Novatel_oem615.VelZ;
 }

@@ -24,6 +24,7 @@
 #include "generic_torquer_msgids.h"
 #include "generic_reaction_wheel_msgids.h"
 #include "generic_star_tracker_msgids.h"
+#include "novatel_oem615_msgids.h"
 
 /*
 ** Global Data
@@ -275,6 +276,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_STAR_TRACKER_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(NOVATEL_OEM615_DEVICE_TLM_MID), Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to NOVATEL_OEM615_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -338,6 +345,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
         
         case GENERIC_STAR_TRACKER_DEVICE_TLM_MID:
             Generic_ADCS_ingest_generic_st(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.St);
+            break;
+
+        case NOVATEL_OEM615_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_generic_gps(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Gps);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
@@ -504,6 +515,24 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
                 Generic_ADCS_AppData.inertial_qbn[3] = cmd->qbn[3];
                 CFE_EVS_SendEvent(GENERIC_ADCS_SET_INERT_QUAT_INF_EID, CFE_EVS_EventType_INFORMATION, 
                     "Set inertial quaternion to:  %f, %f, %f, %f", cmd->qbn[0], cmd->qbn[1], cmd->qbn[2], cmd->qbn[3]);
+            }
+            break;
+
+        case GENERIC_ADCS_TWO_AXIS_PARAMS_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_Two_Axis_Params_Cmd_t)) == OS_SUCCESS) {
+                Generic_ADCS_Two_Axis_Params_Cmd_t *cmd;
+                cmd = (Generic_ADCS_Two_Axis_Params_Cmd_t *)Generic_ADCS_AppData.MsgPtr;
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.targetPrimary = cmd->targetPrimary;
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.targetSecondary = cmd->targetSecondary;
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.primaryBody[0] = cmd->primaryBody[0];
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.primaryBody[1] = cmd->primaryBody[1];
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.primaryBody[2] = cmd->primaryBody[2];
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.secondaryBody[0] = cmd->secondaryBody[0];
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.secondaryBody[1] = cmd->secondaryBody[1];
+                Generic_ADCS_AppData.ACSPacket.Payload.TwoAxis.secondaryBody[2] = cmd->secondaryBody[2];
+                CFE_EVS_SendEvent(GENERIC_ADCS_SET_INERT_QUAT_INF_EID, CFE_EVS_EventType_INFORMATION, 
+                    "Set two axis parameters to: (%f, %f, %f), (%f, %f, %f), %d, %d", 
+                    cmd->primaryBody[0], cmd->primaryBody[1], cmd->primaryBody[2], cmd->secondaryBody[0], cmd->secondaryBody[1], cmd->secondaryBody[2], cmd->targetPrimary, cmd->targetSecondary);
             }
             break;
 

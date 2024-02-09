@@ -16,6 +16,7 @@ static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS
 static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_ST);
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS, 
     Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
+static void AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_Gps, Generic_ADCS_AD_Gps_Tlm_Payload_t *AD_Gps);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
@@ -54,6 +55,21 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
         &ACS->Inertial.phiErr_max, &ACS->Inertial.h_mgmt, junk, &newline);
     fscanf(in, "%lf %lf %lf %lf %lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Inertial.Kp[0], &ACS->Inertial.Kp[1], &ACS->Inertial.Kp[2], &ACS->Inertial.Kr[0], &ACS->Inertial.Kr[1], &ACS->Inertial.Kr[2], 
         &ACS->Inertial.Ki[0], &ACS->Inertial.Ki[1], &ACS->Inertial.Ki[2], junk, &newline );
+    // AC Two Axis
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %ld %lf %lf %lf %lf %lf %lf %lf %lf %lf%[^\n]%[\n]",
+        &ACS->TwoAxis.threshold_angle, &ACS->TwoAxis.phiErr_max, &ACS->TwoAxis.whl_preserve_direction, 
+        &ACS->TwoAxis.Kp[0], &ACS->TwoAxis.Kp[1], &ACS->TwoAxis.Kp[2], 
+        &ACS->TwoAxis.Kr[0], &ACS->TwoAxis.Kr[1], &ACS->TwoAxis.Kr[2], 
+        &ACS->TwoAxis.Ki[0], &ACS->TwoAxis.Ki[1], &ACS->TwoAxis.Ki[2], junk, &newline);
+    ACS->TwoAxis.targetPrimary = POS;
+    ACS->TwoAxis.targetSecondary = SUN_LOS;
+    ACS->TwoAxis.primaryBody[0] = 1.0;
+    ACS->TwoAxis.primaryBody[1] = 0.0;
+    ACS->TwoAxis.primaryBody[2] = 0.0;
+    ACS->TwoAxis.secondaryBody[0] = 0.0;
+    ACS->TwoAxis.secondaryBody[1] = 1.0;
+    ACS->TwoAxis.secondaryBody[2] = 0.0;
     // AC Momentum management
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &GNC->Hmgmt.Kb, &GNC->Hmgmt.b_range, &GNC->Hmgmt.loFrac, &GNC->Hmgmt.hiFrac, junk, &newline);
@@ -66,6 +82,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     AD_mag(&DI->Mag, &AD->Mag);
     AD_st(&DI->St, &AD->St);
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
+    AD_gps(&DI->Gps, &AD->Gps);
 
     AD_to_GNC(AD, GNC);
     for (int i = 0; i < 3; i++) GNC->HwhlB[i] = DI->Rw.HwhlB[i];
@@ -161,6 +178,14 @@ static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_Fss, const Generi
     }
 }
 
+static void AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_Gps, Generic_ADCS_AD_Gps_Tlm_Payload_t *AD_Gps)
+{
+    for (int i = 0; i < 3; i++) {
+        AD_Gps->PosN[i] = DI_Gps->PosN[i];
+        AD_Gps->VelN[i] = DI_Gps->VelN[i];
+    }
+}
+
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC)
 {
     for (int i = 0; i < 3; i++) {
@@ -168,6 +193,9 @@ static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_
         GNC->svb[i] = AD->Sol.svb[i];
         GNC->wbn[i] = AD->Imu.wbn[i];
         GNC->qbn[i] = AD->St.qbn[i];
+        GNC->PosN[i] = AD->Gps.PosN[i];
+        GNC->VelN[i] = AD->Gps.VelN[i];
+        QxV(GNC->qbn, GNC->svb, GNC->svn);
     }
     GNC->qbn[3] = AD->St.qbn[3];
     GNC->SunValid = AD->Sol.SunValid;
@@ -542,11 +570,6 @@ static void AC_twoaxis(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_TwoA
     double wn_cmd[3] = {0.0, 0.0, 0.0}; /* Commanded interial angular velocity expressed in inertial frame*/
     double rateDotAxis = 0;
 
-    for(i=0;i<3;i++)
-    {
-        ACS->primaryBody[i] = GNC->Cmd[GNC->Mode].primary_axis_body[i];
-        ACS->secondaryBody[i] = GNC->Cmd[GNC->Mode].secondary_axis_body[i];
-    }
     /*Set Primary/Seconary Vectors*/
     setTargetVec(ACS->targetPrimary, GNC, ACS->primaryBody, ACS->primaryTarget, primaryRate);
     setTargetVec(ACS->targetSecondary, GNC, ACS->secondaryTarget, ACS->secondaryTarget, secondaryRate);
