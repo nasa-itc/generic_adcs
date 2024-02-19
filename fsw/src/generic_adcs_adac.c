@@ -195,9 +195,9 @@ static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_
         GNC->qbn[i] = AD->St.qbn[i];
         GNC->PosN[i] = AD->Gps.PosN[i];
         GNC->VelN[i] = AD->Gps.VelN[i];
-        QxV(GNC->qbn, GNC->svb, GNC->svn);
     }
     GNC->qbn[3] = AD->St.qbn[3];
+    QxV(GNC->qbn, GNC->svb, GNC->svn);
     GNC->SunValid = AD->Sol.SunValid;
 }
 
