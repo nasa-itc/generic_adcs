@@ -447,7 +447,7 @@ static void check_collinearity(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS
     }
     else if (tgt_angle < ACS->threshold_angle)
     {
-        QTxQ(GNC->qbn, ACS->secondaryBody, ACS->secondaryTarget);
+        QTxV(GNC->qbn, ACS->secondaryBody, ACS->secondaryTarget);
         UNITV(ACS->secondaryTarget);
     }
 }
