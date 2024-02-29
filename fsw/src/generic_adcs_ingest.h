@@ -15,5 +15,6 @@ void Generic_ADCS_ingest_generic_fss(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Fs
 void Generic_ADCS_ingest_generic_css(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Css_Tlm_Payload_t *Css);
 void Generic_ADCS_ingest_generic_imu(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu);
 void Generic_ADCS_ingest_generic_rw(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw);
+void Generic_ADCS_ingest_generic_st(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_St_Tlm_Payload_t *St);
 
 #endif

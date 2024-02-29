@@ -11,6 +11,7 @@
 #include "generic_css_msg.h"
 #include "generic_imu_msg.h"
 #include "generic_reaction_wheel_msg.h"
+#include "generic_star_tracker_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -53,6 +54,9 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
             DI->Rw.H_maxB[i] += H_in_body[i];
         }
     }
+    // Star Tracker
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &DI->St.qbs[0], &DI->St.qbs[1], &DI->St.qbs[2], &DI->St.qbs[3], junk, &newline);
 }
 
 void Generic_ADCS_ingest_generic_mag(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
@@ -139,4 +143,13 @@ void Generic_ADCS_ingest_generic_rw(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_Rw_
             Rw->HwhlB[i] += H_in_body[i];
         }
     }
+}
+
+void Generic_ADCS_ingest_generic_st(CFE_MSG_Message_t * Msg, Generic_ADCS_DI_St_Tlm_Payload_t *St)
+{
+    GENERIC_STAR_TRACKER_Device_tlm_t *st = (GENERIC_STAR_TRACKER_Device_tlm_t *)Msg;
+
+    St->valid = st->Generic_star_tracker.IsValid;
+    double q[4] = {st->Generic_star_tracker.Q0, st->Generic_star_tracker.Q1, st->Generic_star_tracker.Q2, st->Generic_star_tracker.Q3};
+    QxQ(q, St->qbs, St->q);
 }

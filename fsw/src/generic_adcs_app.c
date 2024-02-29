@@ -23,6 +23,7 @@
 #include "generic_imu_msgids.h"
 #include "generic_torquer_msgids.h"
 #include "generic_reaction_wheel_msgids.h"
+#include "generic_star_tracker_msgids.h"
 
 /*
 ** Global Data
@@ -267,6 +268,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_RW_APP_HK_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(GENERIC_STAR_TRACKER_DEVICE_TLM_MID), Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_STAR_TRACKER_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -326,6 +333,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
         
         case GENERIC_RW_APP_HK_TLM_MID:
             Generic_ADCS_ingest_generic_rw(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Rw);
+            break;
+        
+        case GENERIC_STAR_TRACKER_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_generic_st(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.St);
             break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
