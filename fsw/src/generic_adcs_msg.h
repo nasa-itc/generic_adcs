@@ -109,11 +109,19 @@ typedef struct
 
 typedef struct
 {
+    double qbs[4]; // quaternion from sensor to body
+    double q[4];
+    uint8   valid;
+} __attribute__((packed)) Generic_ADCS_DI_St_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
     Generic_ADCS_DI_Css_Tlm_Payload_t Css;
     Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
     Generic_ADCS_DI_Rw_Tlm_Payload_t  Rw;
+    Generic_ADCS_DI_St_Tlm_Payload_t  St;
 } __attribute__((packed)) Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct

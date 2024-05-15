@@ -23,6 +23,7 @@
 #include "generic_imu_msgids.h"
 #include "generic_torquer_msgids.h"
 #include "generic_reaction_wheel_msgids.h"
+#include "generic_star_tracker_msgids.h"
 
 /*
 ** Global Data
@@ -267,6 +268,12 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_RW_APP_HK_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
         return (status);
     }
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(GENERIC_STAR_TRACKER_DEVICE_TLM_MID), Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to GENERIC_STAR_TRACKER_DEVICE_TLM_MID, RC = 0x%08lX\n", (unsigned long)status);
+        return (status);
+    }
 
     /* 
      ** Send an information event that the app has initialized. 
@@ -327,6 +334,10 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
         case GENERIC_RW_APP_HK_TLM_MID:
             Generic_ADCS_ingest_generic_rw(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Rw);
             break;
+        
+        case GENERIC_STAR_TRACKER_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_generic_st(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.St);
+            break;
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control(&Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload, &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
@@ -350,7 +361,6 @@ static void  Generic_ADCS_ProcessCommandPacket(void)
 */
 static void  Generic_ADCS_ProcessGroundCommand(void)
 {
-    int32 status = OS_SUCCESS;
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
     CFE_MSG_FcnCode_t CommandCode = 0;
 
@@ -500,7 +510,6 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
 */
 static void  Generic_ADCS_ProcessTelemetryRequest(void)
 {
-    int32 status = OS_SUCCESS;
     CFE_SB_MsgId_t MsgId = CFE_SB_INVALID_MSG_ID;
     CFE_MSG_FcnCode_t CommandCode = 0;
 
@@ -599,7 +608,7 @@ static int32 Generic_ADCS_VerifyCmdLength(CFE_MSG_Message_t * msg, uint16 expect
         CFE_MSG_GetFcnCode(msg, &cmd_code);
 
         CFE_EVS_SendEvent(GENERIC_ADCS_LEN_ERR_EID, CFE_EVS_EventType_ERROR,
-           "Invalid msg length: ID = 0x%X,  CC = %d, Len = %d, Expected = %d",
+           "Invalid msg length: ID = 0x%X,  CC = %d, Len = %ld, Expected = %d",
               CFE_SB_MsgIdToValue(msg_id), cmd_code, actual_length, expected_length);
 
         status = OS_ERROR;
