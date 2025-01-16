@@ -5,6 +5,7 @@
 *******************************************************************************/
 
 #include <math.h>
+#include <stdio.h>
 #include "generic_adcs_utilities.h"
 
 /**********************************************************************/
@@ -35,6 +36,16 @@ void QxQ(double A[4], double B[4], double C[4])
       C[1]=-A[2]*B[0]+A[3]*B[1]+A[0]*B[2]+A[1]*B[3];
       C[2]= A[1]*B[0]-A[0]*B[1]+A[3]*B[2]+A[2]*B[3];
       C[3]=-A[0]*B[0]-A[1]*B[1]-A[2]*B[2]+A[3]*B[3];
+}
+
+/**********************************************************************/
+/* Product of a Quaternion (A) with the Complement of a Quaternion (B)*/
+void QxQT(double A[4], double B[4], double C[4])
+{
+      C[0]=-A[3]*B[0]-A[2]*B[1]+A[1]*B[2]+A[0]*B[3];
+      C[1]= A[2]*B[0]-A[3]*B[1]-A[0]*B[2]+A[1]*B[3];
+      C[2]=-A[1]*B[0]+A[0]*B[1]-A[3]*B[2]+A[2]*B[3];
+      C[3]= A[0]*B[0]+A[1]*B[1]+A[2]*B[2]+A[3]*B[3];
 }
 
 /**********************************************************************/
@@ -78,6 +89,43 @@ void QTxV(double QAB[4],double Va[3],double Vb[3])
       Vb[2] = (-qq[0][0]-qq[1][1]+qq[2][2]+qq[3][3])*Va[2]
                           + 2.0*((qq[0][2]-qq[1][3])*Va[0]
                                 +(qq[1][2]+qq[0][3])*Va[1]);
+}
+#ifndef EPS16
+      #define EPS16 (1.0E-16)
+#endif
+/**********************************************************************/
+/*  Normalize a quaternion                                            */
+void UNITQ(double Q[4])
+{
+      double A;
+
+      A=sqrt(Q[0]*Q[0]+Q[1]*Q[1]+Q[2]*Q[2]+Q[3]*Q[3]);
+      if (A < EPS16) {
+         Q[0]=0.0;
+         Q[1]=0.0;
+         Q[2]=0.0;
+         Q[3]=1.0;
+         #ifndef ACS_IN_FSW
+         printf("Divide by zero in UNITQ (Line %d of mathkit.c).  You'll want to fix that.\n",__LINE__);
+         #endif
+      }
+      else {
+         Q[0]/=A;
+         Q[1]/=A;
+         Q[2]/=A;
+         Q[3]/=A;
+      }
+}
+/**********************************************************************/
+/*  Rectify a quaternion, forcing q[3] to be positive                 */
+void RECTIFYQ(double Q[4])
+{
+      if(Q[3] < 0.0) {
+         Q[0] = -Q[0];
+         Q[1] = -Q[1];
+         Q[2] = -Q[2];
+         Q[3] = -Q[3];
+      }
 }
 /**********************************************************************/
 /*  Normalize a 3-vector if it is non-zero.                           */
