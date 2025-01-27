@@ -20,6 +20,7 @@
 #define GENERIC_ADCS_SEND_AC_CMD_CC             6
 #define GENERIC_ADCS_SEND_DO_CMD_CC             7
 #define GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC 8
+#define GENERIC_ADCS_INERTIAL_QUATERNION_CC     9
 
 /* 
 ** Telemetry Request Command Codes
@@ -49,6 +50,11 @@ typedef struct
     uint8    MomentumManagement;
 } Generic_ADCS_MomentumManagement_cmd_t;
 
+typedef struct 
+{
+    CFE_MSG_CommandHeader_t CmdHeader;
+    double qbn[4];
+} Generic_ADCS_Quat_cmd_t;
 
 /*
 ** Generic_ADCS housekeeping type definition
@@ -158,9 +164,17 @@ typedef struct
 
 typedef struct
 {
+  uint8 Valid;     /* [-] data validity flag */
+  double qbn[4];  /* [-] quaternion expressed in body frame */
+} __attribute__((packed)) Generic_ADCS_AD_ST_Tlm_Payload_t;
+
+
+typedef struct
+{
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
+    Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct
@@ -196,6 +210,8 @@ typedef struct {
     double HwhlB[3];
     double Mcmd[3];
     double Tcmd[3];
+    double qbn[4];
+    double qErr[4];
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
@@ -232,8 +248,26 @@ typedef struct {
 } __attribute__((packed)) Generic_ADCS_AC_Sunsafe_Tlm_t;
 
 typedef struct {
-    Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
-    Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
+   /* Inputs*/
+   double Kp[3];
+   double Kr[3];
+   double Ki[3];
+   double phiErr_max;
+   double qbn_cmd[4];
+   long h_mgmt;
+
+   /* Internal Variables */
+   double therr[3];
+   double sumtherr[3];
+   double qErr[4];
+   double werr[3];
+   double Tcmd[3];
+} __attribute__((packed)) Generic_ADCS_AC_Inertial_Tlm_t;
+
+typedef struct {
+    Generic_ADCS_AC_Bdot_Tlm_t     Bdot;
+    Generic_ADCS_AC_Sunsafe_Tlm_t  Sunsafe;
+    Generic_ADCS_AC_Inertial_Tlm_t Inertial;
 } __attribute__((packed)) Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct {
