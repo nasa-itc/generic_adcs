@@ -492,6 +492,21 @@ static void  Generic_ADCS_ProcessGroundCommand(void)
             }
             break;
 
+        case GENERIC_ADCS_INERTIAL_QUATERNION_CC:
+            if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_Quat_cmd_t)) == OS_SUCCESS)
+            {
+                Generic_ADCS_Quat_cmd_t *cmd;
+                cmd = (Generic_ADCS_Quat_cmd_t *)Generic_ADCS_AppData.MsgPtr;
+                Generic_ADCS_AppData.ACSPacket.Payload.Inertial.qbn_cmd[0] = cmd->qbn[0];
+                Generic_ADCS_AppData.ACSPacket.Payload.Inertial.qbn_cmd[1] = cmd->qbn[1];
+                Generic_ADCS_AppData.ACSPacket.Payload.Inertial.qbn_cmd[2] = cmd->qbn[2];
+                Generic_ADCS_AppData.ACSPacket.Payload.Inertial.qbn_cmd[3] = cmd->qbn[3];
+                CFE_EVS_SendEvent(GENERIC_ADCS_SET_INER_QUAT_INF_EID, CFE_EVS_EventType_INFORMATION, "Set inertial quaternion to: %f,%f,%f,%f", cmd->qbn[0], cmd->qbn[1], cmd->qbn[2], cmd->qbn[3]);
+            } else {
+                Generic_ADCS_AppData.HkTelemetryPkt.CommandErrorCount++;
+            }
+            break;
+
         /*
         ** Invalid Command Codes
         */

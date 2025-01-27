@@ -15,9 +15,11 @@ static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS, 
     Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
+static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_Mag);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
+static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS);
 static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD, 
@@ -44,6 +46,11 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
     for (int i = 0; i < 3; i++) {
         ACS->Sunsafe.therr[i] = ACS->Sunsafe.werr[i] = ACS->Sunsafe.Tcmd[i] = 0;
     }
+    // AC inertial
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Inertial.qbn_cmd[0], &ACS->Inertial.qbn_cmd[1], &ACS->Inertial.qbn_cmd[2], &ACS->Inertial.qbn_cmd[3], &ACS->Inertial.phiErr_max, junk, &newline);
+    fscanf(in, "%lf %lf %lf %lf %lf %lf%[^\n]%[\n]", &ACS->Inertial.Kp[0], &ACS->Inertial.Kp[1], &ACS->Inertial.Kp[2], &ACS->Inertial.Kr[0], &ACS->Inertial.Kr[1], &ACS->Inertial.Kr[2], junk, &newline);
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &ACS->Inertial.Ki[0], &ACS->Inertial.Ki[1], &ACS->Inertial.Ki[2], junk, &newline);
     // AC Momentum management
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf %lf %lf %lf%[^\n]%[\n]", &GNC->Hmgmt.Kb, &GNC->Hmgmt.b_range, &GNC->Hmgmt.loFrac, &GNC->Hmgmt.hiFrac, junk, &newline);
@@ -55,6 +62,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
+    AD_st(&DI->St, &AD->ST);
 
     AD_to_GNC(AD, GNC);
     for (int i = 0; i < 3; i++) GNC->HwhlB[i] = DI->Rw.HwhlB[i];
@@ -67,6 +75,10 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     
     case SUNSAFE_MODE:
         AC_sunsafe(GNC, &ACS->Sunsafe);
+        break;
+
+    case INERTIAL_MODE:
+        AC_inertial(GNC, &ACS->Inertial);
         break;
 
     case PASSIVE_MODE:
@@ -136,13 +148,35 @@ static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_Fss, const Generi
     }
 }
 
+static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *st)
+{
+    int i;
+    double qST[4] = {0.0, 0.0, 0.0, 1.0};
+    int valid_st_cnt = 0;
+
+    if (DI_ST->valid)  {
+        valid_st_cnt = valid_st_cnt + 1;
+        QxQ(DI_ST->q, DI_ST->qbs, qST);
+    }
+
+    if (valid_st_cnt > 0.0) {
+        for (i = 0; i < 4; i++) st->qbn[i] = qST[i];
+        st->Valid = true;
+    }
+    else {
+        st->Valid = false;
+    }
+}
+
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC)
 {
     for (int i = 0; i < 3; i++) {
         GNC->bvb[i] = AD->Mag.bvb[i];
         GNC->svb[i] = AD->Sol.svb[i];
         GNC->wbn[i] = AD->Imu.wbn[i];
+        GNC->qbn[i] = AD->ST.qbn[i];
     }
+    GNC->qbn[3] = AD->ST.qbn[3];
     GNC->SunValid = AD->Sol.SunValid;
 }
 
@@ -237,6 +271,78 @@ static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Suns
          GNC->Mcmd[i] = 0.0;
       }
    }
+
+}
+
+static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS)
+{
+    int i;
+    double qErrLimited[4] = {0.0, 0.0, 0.0, 0.0}; /* Initialize Error quaterion for internal use */
+    double e_axis[3] = {0.0, 0.0, 0.0};           /* Initialze Eigen axis of the Body to Body quaternion*/
+    double phiErr = 0.0;                          /* Intialize angular error of Body to Body quaternion */
+
+    /*..Form attitude error signals */
+    QxQT(ACS->qbn_cmd, GNC->qbn, ACS->qErr);
+
+    /*..Unitize Quaternion Error */
+    UNITQ(ACS->qErr);
+
+    /*..Adopt shortest path */
+    RECTIFYQ(ACS->qErr);
+
+    for (i = 0; i < 4; i++)
+    {
+        GNC->qErr[i] = ACS->qErr[i];
+    }
+
+    /*..Limit B<-B quaterion Error */
+    phiErr = 2.0 * arccos(ACS->qErr[3]);
+    if (phiErr > ACS->phiErr_max)
+    {
+        phiErr = ACS->phiErr_max;
+        e_axis[0] = ACS->qErr[0];
+        e_axis[1] = ACS->qErr[1];
+        e_axis[2] = ACS->qErr[2];
+        UNITV(e_axis);
+        for (i = 0; i < 3; i++)
+        {
+            qErrLimited[i] = e_axis[i] * sin(phiErr / 2.0);
+        }
+        qErrLimited[3] = cos(phiErr / 2.0);
+    }
+    else
+    {
+        for (i = 0; i < 4; i++)
+        {
+            qErrLimited[i] = ACS->qErr[i];
+        }
+    }
+
+    /*..Compute attittude/rate errors, Apply PD Control Law and compute minimum Torque margin */
+    for (i = 0; i < 3; i++)
+    {
+        ACS->therr[i] = 2.0 * qErrLimited[i];
+        ACS->sumtherr[i] = ACS->sumtherr[i] + ACS->therr[i];
+        ACS->werr[i] = -GNC->wbn[i];
+        ACS->Tcmd[i] = ACS->Kp[i] * ACS->therr[i] + ACS->Kr[i] * ACS->werr[i] + ACS->Ki[i] * ACS->sumtherr[i];
+    }
+
+    for (i = 0; i < 3; i++)
+    {
+        GNC->Tcmd[i] = -ACS->Tcmd[i];
+    }
+
+    if (ACS->h_mgmt) {
+      AC_h_mgmt(GNC);
+      for(i = 0; i < 3; i++) {
+          GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
+      }
+    }
+    else {
+      for(i = 0; i < 3; i++) {
+          GNC->Mcmd[i] = 0.0;
+      }
+    }
 
 }
 
