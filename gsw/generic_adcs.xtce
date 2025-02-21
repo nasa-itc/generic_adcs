@@ -1126,6 +1126,17 @@
           </xtce:EnumerationList>
         </xtce:EnumeratedArgumentType>
       </xtce:ArgumentTypeSet>
+      <xtce:ArgumentTypeSet>
+        <xtce:EnumeratedArgumentType name="GNC_ADCS_MODE_Type" initialValue="PASSIVE" shortDescription="ADCS Mode">
+          <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+          <xtce:EnumerationList>
+            <xtce:Enumeration value="0" label="PASSIVE"/>
+            <xtce:Enumeration value="1" label="BDOT"/>
+            <xtce:Enumeration value="2" label="SUNSAFE"/>
+            <xtce:Enumeration value="3" label="INERTIAL"/>
+          </xtce:EnumerationList>
+        </xtce:EnumeratedArgumentType>
+      </xtce:ArgumentTypeSet>      
       <xtce:MetaCommandSet>
         <xtce:MetaCommand name="GENERIC_ADCS_PERFORM_ADAC">
           <xtce:BaseMetaCommand metaCommandRef="/CCSDS/CCSDS_TC">
@@ -1235,7 +1246,7 @@
             </xtce:ArgumentAssignmentList>
           </xtce:BaseMetaCommand>
           <xtce:ArgumentList>
-            <xtce:Argument name="GNC_MODE" argumentTypeRef="GNC_MODE_Type"/>
+            <xtce:Argument name="GNC_MODE" argumentTypeRef="GNC_ADCS_MODE_Type"/>
           </xtce:ArgumentList>
           <xtce:CommandContainer name="GENERIC_ADCS_GENERIC_ADCS_SET_MODE_CC_CommandContainer">
             <xtce:EntryList>
