@@ -17,12 +17,12 @@
 /*
 ** Specified pipe depth - how many messages will be queued in the pipe
 */
-#define GENERIC_ADCS_PIPE_DEPTH            32
+#define GENERIC_ADCS_PIPE_DEPTH 32
 
 /*
 ** GENERIC_ADCS global data structure
-** The cFE convention is to put all global app data in a single struct. 
-** This struct is defined in the `sample_app.h` file with one global instance 
+** The cFE convention is to put all global app data in a single struct.
+** This struct is defined in the `sample_app.h` file with one global instance
 ** in the `.c` file.
 */
 typedef struct
@@ -31,13 +31,13 @@ typedef struct
     ** Housekeeping telemetry packet
     ** Each app defines its own packet which contains its OWN telemetry
     */
-    Generic_ADCS_Hk_tlm_t   HkTelemetryPkt;   /* GENERIC_ADCS Housekeeping Telemetry Packet */
-    Generic_ADCS_DI_Tlm_t   DIPacket;
-    Generic_ADCS_AD_Tlm_t   ADPacket;
-    Generic_ADCS_GNC_Tlm_t  GNCPacket;
-    Generic_ADCS_AC_Tlm_t   ACSPacket;
-    Generic_ADCS_DO_Tlm_t   DOPacket;
-    
+    Generic_ADCS_Hk_tlm_t  HkTelemetryPkt; /* GENERIC_ADCS Housekeeping Telemetry Packet */
+    Generic_ADCS_DI_Tlm_t  DIPacket;
+    Generic_ADCS_AD_Tlm_t  ADPacket;
+    Generic_ADCS_GNC_Tlm_t GNCPacket;
+    Generic_ADCS_AC_Tlm_t  ACSPacket;
+    Generic_ADCS_DO_Tlm_t  DOPacket;
+
     /*
     ** Command packets to other apps
     */
@@ -47,9 +47,9 @@ typedef struct
     /*
     ** Operational data  - not reported in housekeeping
     */
-    CFE_MSG_Message_t * MsgPtr;             /* Pointer to msg received on software bus */
-    CFE_SB_PipeId_t CmdPipe;            /* Pipe Id for HK command pipe */
-    uint32 RunStatus;                   /* App run status for controlling the application state */
+    CFE_MSG_Message_t *MsgPtr;    /* Pointer to msg received on software bus */
+    CFE_SB_PipeId_t    CmdPipe;   /* Pipe Id for HK command pipe */
+    uint32             RunStatus; /* App run status for controlling the application state */
 
 } Generic_ADCS_AppData_t;
 
@@ -66,7 +66,6 @@ extern Generic_ADCS_AppData_t Generic_ADCS_AppData; /* GENERIC_ADCS App Data */
 ** Note: Except for the entry point (ADCS_AppMain), these
 **       functions are not called from any other source module.
 */
-void  ADCS_AppMain(void);
+void ADCS_AppMain(void);
 
 #endif
-

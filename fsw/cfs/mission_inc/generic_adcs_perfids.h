@@ -13,6 +13,6 @@
 ** id conflict with other apps.  Performance IDs are used for cFE performance
 ** metrics.
 */
-#define GENERIC_ADCS_PERF_ID          777
+#define GENERIC_ADCS_PERF_ID 777
 
 #endif
