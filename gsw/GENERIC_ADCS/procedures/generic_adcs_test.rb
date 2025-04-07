@@ -1,41 +1,32 @@
 require 'cosmos'
 require 'cosmos/script'
-require 'mission_lib.rb'
+require 'generic_adcs_lib.rb'
 
-class ADCS_LPT < Cosmos::Test
+class GENERIC_ADCS_Functional_Test < Cosmos::Test
   def setup
+    safe_adcs()
   end
 
-  def test_lpt
-    start("tests/generic_adcs_lpt_test.rb")
+  def test_application
+      start("tests/generic_adcs_app_test.rb")
   end
 
   def teardown
-  end
-end
-
-class ADCS_CPT < Cosmos::Test
-  def setup
-  end
-
-  def test_cpt
-    start("tests/generic_adcs_cpt_test.rb")
-  end
-
-  def teardown
+    safe_adcs()
   end
 end
 
 class Generic_adcs_Test < Cosmos::TestSuite
   def initialize
       super()
-      add_test('ADCS_CPT')
-      add_test('ADCS_LPT')
+      add_test('GENERIC_ADCS_Functional_Test')
   end
 
   def setup
+    safe_adcs()
   end
   
   def teardown
+    safe_adcs()
   end
 end
