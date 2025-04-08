@@ -65,6 +65,49 @@ def adcs_sunsafe()
 end
 
 def safe_adcs()
+
+    cmd("GENERIC_FSS GENERIC_FSS_REQ_HK")
+    fss_enabled = tlm("GENERIC_FSS GENERIC_FSS_HK_TLM DEVICE_ENABLED")
+    if (fss_enabled != "ENABLED")
+        cmd("GENERIC_FSS GENERIC_FSS_ENABLE_CC")
+    end
+
+    cmd("GENERIC_CSS GENERIC_CSS_REQ_HK")
+    css_enabled = tlm("GENERIC_CSS GENERIC_CSS_HK_TLM DEVICE_ENABLED")
+    if (css_enabled != "ENABLED")
+        cmd("GENERIC_CSS GENERIC_CSS_ENABLE_CC")
+    end
+
+    cmd("GENERIC_IMU GENERIC_IMU_REQ_HK")
+    imu_enabled = tlm("GENERIC_IMU GENERIC_IMU_HK_TLM DEVICE_ENABLED")
+    if (imu_enabled != "ENABLED")
+        cmd("GENERIC_IMU GENERIC_IMU_ENABLE_CC")
+    end
+
+    cmd("GENERIC_MAG GENERIC_MAG_REQ_HK")
+    mag_enabled = tlm("GENERIC_MAG GENERIC_MAG_HK_TLM DEVICE_ENABLED")
+    if (mag_enabled != "ENABLED")
+        cmd("GENERIC_MAG GENERIC_MAG_ENABLE_CC")
+    end
+
+    cmd("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_REQ_HK")
+    st_enabled = tlm("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_HK_TLM DEVICE_ENABLED")
+    if (st_enabled != "ENABLED")
+        cmd("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_ENABLE_CC")
+    end
+
+    cmd("NOVATEL_OEM615 NOVATEL_OEM615_REQ_HK")
+    gps_enabled = tlm("NOVATEL_OEM615 NOVATEL_OEM615_HK_TLM DEVICE_ENABLED")
+    if (gps_enabled != "ENABLED")
+        cmd("NOVATEL_OEM615 NOVATEL_OEM615_ENABLE_CC")
+    end
+
+    cmd("GENERIC_TORQUER GENERIC_TORQUER_SEND_HK_CC")
+    torquer_enabled = tlm("GENERIC_TORQUER GENERIC_TORQUER_HK_TLM_T DEVICE_ENABLED")
+    if (torquer_enabled != "ENABLED")
+        cmd("GENERIC_TORQUER GENERIC_TORQUER_ENABLE_CC")
+    end
+
     get_adcs_data()
     mode = tlm("GENERIC_ADCS GENERIC_ADCS_GNC MODE")
     if (mode != "SUNSAFE")
