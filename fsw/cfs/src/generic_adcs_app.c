@@ -556,6 +556,7 @@ static void Generic_ADCS_ProcessGroundCommand(void)
             break;
 
         case GENERIC_ADCS_INERTIAL_QUATERNION_CC:
+            printf("ADCS Quat CMD Len: %ld\n", sizeof(Generic_ADCS_Quat_cmd_t));
             if (Generic_ADCS_VerifyCmdLength(Generic_ADCS_AppData.MsgPtr, sizeof(Generic_ADCS_Quat_cmd_t)) ==
                 OS_SUCCESS)
             {

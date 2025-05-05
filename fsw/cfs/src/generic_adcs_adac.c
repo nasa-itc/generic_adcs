@@ -212,6 +212,7 @@ static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_
         GNC->qbn[i] = AD->ST.qbn[i];
     }
     GNC->qbn[3]   = AD->ST.qbn[3];
+    GNC->qValid   = AD->ST.Valid;
     GNC->SunValid = AD->Sol.SunValid;
 }
 
@@ -334,70 +335,72 @@ static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Ine
     double e_axis[3]      = {0.0, 0.0, 0.0};      /* Initialze Eigen axis of the Body to Body quaternion*/
     double phiErr         = 0.0;                  /* Intialize angular error of Body to Body quaternion */
 
-    /*..Form attitude error signals */
-    QxQT(ACS->qbn_cmd, GNC->qbn, ACS->qErr);
+    if(GNC->qValid){
+        /*..Form attitude error signals */
+        QxQT(ACS->qbn_cmd, GNC->qbn, ACS->qErr);
 
-    /*..Unitize Quaternion Error */
-    UNITQ(ACS->qErr);
+        /*..Unitize Quaternion Error */
+        UNITQ(ACS->qErr);
 
-    /*..Adopt shortest path */
-    RECTIFYQ(ACS->qErr);
+        /*..Adopt shortest path */
+        RECTIFYQ(ACS->qErr);
 
-    for (i = 0; i < 4; i++)
-    {
-        GNC->qErr[i] = ACS->qErr[i];
-    }
-
-    /*..Limit B<-B quaterion Error */
-    phiErr = 2.0 * arccos(ACS->qErr[3]);
-    if (phiErr > ACS->phiErr_max)
-    {
-        phiErr    = ACS->phiErr_max;
-        e_axis[0] = ACS->qErr[0];
-        e_axis[1] = ACS->qErr[1];
-        e_axis[2] = ACS->qErr[2];
-        UNITV(e_axis);
-        for (i = 0; i < 3; i++)
-        {
-            qErrLimited[i] = e_axis[i] * sin(phiErr / 2.0);
-        }
-        qErrLimited[3] = cos(phiErr / 2.0);
-    }
-    else
-    {
         for (i = 0; i < 4; i++)
         {
-            qErrLimited[i] = ACS->qErr[i];
+            GNC->qErr[i] = ACS->qErr[i];
         }
-    }
 
-    /*..Compute attittude/rate errors, Apply PD Control Law and compute minimum Torque margin */
-    for (i = 0; i < 3; i++)
-    {
-        ACS->therr[i]    = 2.0 * qErrLimited[i];
-        ACS->sumtherr[i] = ACS->sumtherr[i] + ACS->therr[i];
-        ACS->werr[i]     = -GNC->wbn[i];
-        ACS->Tcmd[i]     = ACS->Kp[i] * ACS->therr[i] + ACS->Kr[i] * ACS->werr[i] + ACS->Ki[i] * ACS->sumtherr[i];
-    }
+        /*..Limit B<-B quaterion Error */
+        phiErr = 2.0 * arccos(ACS->qErr[3]);
+        if (phiErr > ACS->phiErr_max)
+        {
+            phiErr    = ACS->phiErr_max;
+            e_axis[0] = ACS->qErr[0];
+            e_axis[1] = ACS->qErr[1];
+            e_axis[2] = ACS->qErr[2];
+            UNITV(e_axis);
+            for (i = 0; i < 3; i++)
+            {
+                qErrLimited[i] = e_axis[i] * sin(phiErr / 2.0);
+            }
+            qErrLimited[3] = cos(phiErr / 2.0);
+        }
+        else
+        {
+            for (i = 0; i < 4; i++)
+            {
+                qErrLimited[i] = ACS->qErr[i];
+            }
+        }
 
-    for (i = 0; i < 3; i++)
-    {
-        GNC->Tcmd[i] = -ACS->Tcmd[i];
-    }
-
-    if (ACS->h_mgmt)
-    {
-        AC_h_mgmt(GNC);
+        /*..Compute attittude/rate errors, Apply PD Control Law and compute minimum Torque margin */
         for (i = 0; i < 3; i++)
         {
-            GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
+            ACS->therr[i]    = 2.0 * qErrLimited[i];
+            ACS->sumtherr[i] = ACS->sumtherr[i] + ACS->therr[i];
+            ACS->werr[i]     = -GNC->wbn[i];
+            ACS->Tcmd[i]     = ACS->Kp[i] * ACS->therr[i] + ACS->Kr[i] * ACS->werr[i] + ACS->Ki[i] * ACS->sumtherr[i];
         }
-    }
-    else
-    {
+
         for (i = 0; i < 3; i++)
         {
-            GNC->Mcmd[i] = 0.0;
+            GNC->Tcmd[i] = -ACS->Tcmd[i];
+        }
+
+        if (ACS->h_mgmt)
+        {
+            AC_h_mgmt(GNC);
+            for (i = 0; i < 3; i++)
+            {
+                GNC->Mcmd[i] = GNC->Hmgmt.Mcmd[i];
+            }
+        }
+        else
+        {
+            for (i = 0; i < 3; i++)
+            {
+                GNC->Mcmd[i] = 0.0;
+            }
         }
     }
 }
