@@ -335,7 +335,8 @@ static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Ine
     double e_axis[3]      = {0.0, 0.0, 0.0};      /* Initialze Eigen axis of the Body to Body quaternion*/
     double phiErr         = 0.0;                  /* Intialize angular error of Body to Body quaternion */
 
-    if(GNC->qValid){
+    if (GNC->qValid)
+    {
         /*..Form attitude error signals */
         QxQT(ACS->qbn_cmd, GNC->qbn, ACS->qErr);
 
