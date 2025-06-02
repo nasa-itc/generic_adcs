@@ -7,6 +7,7 @@ require 'cosmos/script'
 #
 GENERIC_ADCS_CMD_SLEEP = 0.25
 GENERIC_ADCS_RESPONSE_TIMEOUT = 5
+GENERIC_ADCS_MODE_CHECK_TIMEOUT = 60;
 GENERIC_ADCS_TEST_LOOP_COUNT = 1
 GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
 
@@ -64,6 +65,24 @@ def adcs_sunsafe()
 
 end
 
+def adcs_bdot()
+
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE BDOT_MODE")
+
+end
+
+def adcs_inertial()
+
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE INERTIAL_MODE")
+
+end
+
+def adcs_set_q()
+
+    cmd("GENERIC_ADCS GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0, GNC_INER_QUAT2 0.0, GNC_INER_QUAT3 0.0, GNC_INER_QUAT4 1.0")
+
+end
+
 def safe_adcs()
 
     cmd("GENERIC_FSS GENERIC_FSS_REQ_HK")
@@ -90,6 +109,11 @@ def safe_adcs()
         cmd("GENERIC_MAG GENERIC_MAG_ENABLE_CC")
     end
 
+    sw1_state = tlm("GENERIC_EPS GENERIC_EPS_HK_TLM SWITCH_1_STATE")
+    if(sw1_state == "OFF")
+        eps_cmd("GENERIC_EPS GENERIC_EPS_SWITCH_CC with SWITCH_NUMBER SWITCH_1, STATE ON")
+    end
+
     cmd("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_REQ_HK")
     st_enabled = tlm("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_HK_TLM DEVICE_ENABLED")
     if (st_enabled != "ENABLED")
@@ -102,7 +126,7 @@ def safe_adcs()
         cmd("NOVATEL_OEM615 NOVATEL_OEM615_ENABLE_CC")
     end
 
-    cmd("GENERIC_TORQUER GENERIC_TORQUER_SEND_HK_CC")
+    cmd("GENERIC_TORQUER GENERIC_TORQUER_REQ_HK_CC")
     torquer_enabled = tlm("GENERIC_TORQUER GENERIC_TORQUER_HK_TLM_T DEVICE_ENABLED")
     if (torquer_enabled != "ENABLED")
         cmd("GENERIC_TORQUER GENERIC_TORQUER_ENABLE_CC")
@@ -117,30 +141,51 @@ end
 
 def confirm_adcs_data()
     
+    adcs_sunsafe()
+
+    diff = 0.05
+
     get_adcs_data()
     adcs_sun_valid = tlm("GENERIC_ADCS GENERIC_ADCS_GNC SUN_VALID")
-
-    diff = 0.03
-
     if adcs_sun_valid == 0
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_X", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA SVB_0"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Y", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA SVB_1"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Z", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA SVB_2"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
+        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_X", 1.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Y", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Z", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+
+        diff = 50
+        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC CSS_0", 1000, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
     end
 
+    cmd("GENERIC_IMU GENERIC_IMU_REQ_DATA")
+
+    x_ang_rate_before = tlm("GENERIC_IMU GENERIC_IMU_DATA_TLM X_ANGULAR_RATE").abs
+    y_ang_rate_before = tlm("GENERIC_IMU GENERIC_IMU_DATA_TLM Y_ANGULAR_RATE").abs
+    z_ang_rate_before = tlm("GENERIC_IMU GENERIC_IMU_DATA_TLM Z_ANGULAR_RATE").abs
+
+    adcs_bdot()
+
+    diff = 0.05
+    
+    wait_check("GENERIC_IMU GENERIC_IMU_DATA_TLM X_ANGULAR_RATE < #{x_ang_rate_before}", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check("GENERIC_IMU GENERIC_IMU_DATA_TLM Y_ANGULAR_RATE < #{y_ang_rate_before}", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check("GENERIC_IMU GENERIC_IMU_DATA_TLM Z_ANGULAR_RATE < #{z_ang_rate_before}", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+
+    adcs_inertial()
+    adcs_set_q();
+
     diff = 0.05
 
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_DI RW_MOMENTUM_X", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA WN_0"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_DI RW_MOMENTUM_Y", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA WN_1"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_DI RW_MOMENTUM_Z", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA WN_2"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
+    sleep(GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
-    diff = 0.05
+    qbn0 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0").abs
+    qbn1 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1").abs
+    qbn2 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2").abs
+    qbn3 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3").abs
 
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA QN_0"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA QN_1"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA QN_2"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3", tlm("SIM_42_TRUTH SIM_42_TRUTH_DATA QN_3"), diff, GENERIC_ADCS_RESPONSE_TIMEOUT)
-
+    wait_check_expression("#{qbn0} < 0.05 or #{qbn0} > -0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn1} < 0.05 or #{qbn1} > -0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn2} < 0.05 or #{qbn2} > -0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn3} < 1.05 or #{qbn3} > 0.95", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     get_adcs_hk()
 end
