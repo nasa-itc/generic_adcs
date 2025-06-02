@@ -53,7 +53,7 @@ typedef struct
 typedef struct
 {
     CFE_MSG_CommandHeader_t CmdHeader;
-    double                  qbn[4];
+    float                   qbn[4];
 } Generic_ADCS_Quat_cmd_t;
 
 /*
@@ -211,6 +211,7 @@ typedef struct
     double                   HwhlB[3];
     double                   Mcmd[3];
     double                   Tcmd[3];
+    uint8                    qValid;
     double                   qbn[4];
     double                   qErr[4];
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
