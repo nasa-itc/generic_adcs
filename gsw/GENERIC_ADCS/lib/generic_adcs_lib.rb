@@ -77,6 +77,12 @@ def adcs_inertial()
 
 end
 
+def adcs_passive()
+
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE PASSIVE")
+
+end
+
 def adcs_set_q()
 
     cmd("GENERIC_ADCS GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0, GNC_INER_QUAT2 0.0, GNC_INER_QUAT3 0.0, GNC_INER_QUAT4 1.0")
