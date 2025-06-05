@@ -7,7 +7,6 @@ require 'generic_imu_lib.rb'
 require 'generic_mag_lib.rb'
 require 'generic_reaction_wheel_lib.rb'
 require 'generic_st_lib.rb'
-require 'generic_torquer_lib.rb'
 require 'gps_lib.rb'
 
 class GENERIC_ADCS_Functional_Test < Cosmos::Test
@@ -19,7 +18,7 @@ class GENERIC_ADCS_Functional_Test < Cosmos::Test
       start("tests/generic_adcs_app_test.rb")
   end
 
-  def test_sensors
+  def test_inputs
     safe_adcs()
 
     adcs_confirm_css_data()
@@ -43,9 +42,13 @@ class GENERIC_ADCS_Functional_Test < Cosmos::Test
     safe_adcs()
   end
 
-  def test_actuators
+  def test_outputs
 
+    safe_adcs()
 
+    adcs_confirm_rw_data()
+
+    safe_adcs()
 
   end
 

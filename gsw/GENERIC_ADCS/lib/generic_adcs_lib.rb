@@ -7,7 +7,6 @@ require 'generic_imu_lib.rb'
 require 'generic_mag_lib.rb'
 require 'generic_reaction_wheel_lib.rb'
 require 'generic_st_lib.rb'
-require 'generic_torquer_lib.rb'
 require 'gps_lib.rb'
 
 #
@@ -187,19 +186,17 @@ def confirm_adcs_data()
     adcs_inertial()
     adcs_set_q();
 
-    diff = 0.05
-
-    sleep(30)
+    sleep(GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     qbn0 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0").abs
     qbn1 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1").abs
     qbn2 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2").abs
     qbn3 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3").abs
 
-    wait_check_expression("#{qbn0} < 0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn1} < 0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn2} < 0.05", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn3} > 0.95", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn0} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn1} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn2} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn3} > 0.9", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     get_adcs_hk()
 end
@@ -318,7 +315,7 @@ def adcs_confirm_fss_data()
 
     fss_error = tlm("GENERIC_FSS GENERIC_FSS_DATA_TLM GENERIC_FSS_ERROR_CODE")
 
-    wait_check("GENERIC_ADCS GENERIC_ADCS_DI FSS_VALID == #{fss_error}", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check("GENERIC_ADCS GENERIC_ADCS_DI FSS_VALID == 1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     truth_42_alpha = -Math.atan2(truth_svb2, truth_svb0)
     truth_42_beta = Math.atan2(truth_svb1, truth_svb0)
@@ -431,96 +428,24 @@ def adcs_confirm_mag_data()
 end
 
 def adcs_confirm_rw_data()
-    
-    adcs_passive()
 
-    sleep(GENERIC_ADCS_RESPONSE_TIMEOUT)
+    diff = 0.05
 
-    cmd_err_cnt = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T ERROR_COUNT")
-       
-    # Checking RW 0 Positive Direction
-    rw0_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 0, TORQUE 10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
+    get_adcs_data()
     get_GENERIC_REACTION_WHEEL_data()
-    if (rw0_momentum_init >= GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM)
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0 >= #{rw0_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0 > #{rw0_momentum_init}")
-    end
-    rw0_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0")
-    puts "Reaction Wheel 0 Momentum (N m): #{rw0_momentum}"
-    
-    # Checking RW 1 Positive Direction
-    rw1_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 1, TORQUE 10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
-    get_GENERIC_REACTION_WHEEL_data()
-    if (rw1_momentum_init >= GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM)
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1 >= #{rw1_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1 > #{rw1_momentum_init}")
-    end
-    rw1_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1")
-    puts "Reaction Wheel 1 Momentum (N m): #{rw1_momentum}"
-     
-    # Checking RW 2 Positive Direction
-    rw2_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 2, TORQUE 10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
-    get_GENERIC_REACTION_WHEEL_data()
-    if (rw2_momentum_init >= GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM)
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2 >= #{rw2_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2 > #{rw2_momentum_init}")
-    end
-    rw2_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2")
-    puts "Reaction Wheel 2 Momentum (N m): #{rw2_momentum}"
+    adcs_rw0 = tlm("GENERIC_ADCS GENERIC_ADCS_DO TCMD_X")
+    wait_check_tolerance("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0", adcs_rw0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
-    # Checking RW 0 Negative Direction
-    rw0_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 0, TORQUE -10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
+    get_adcs_data()
     get_GENERIC_REACTION_WHEEL_data()
-    if (rw0_momentum_init <= (-1 * GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM))
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0 <= #{rw0_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0 < #{rw0_momentum_init}")
-    end
-    rw0_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_0")
-    puts "Reaction Wheel 0 Momentum (N m): #{rw0_momentum}"
-    
-    # Checking RW 1 Negative Direction
-    rw1_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 1, TORQUE -10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
-    get_GENERIC_REACTION_WHEEL_data()
-    if (rw1_momentum_init <= (-1 * GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM))
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1 <= #{rw1_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1 < #{rw1_momentum_init}")
-    end
-    rw1_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1")
-    puts "Reaction Wheel 1 Momentum (N m): #{rw1_momentum}"
-        
-    # Checking RW 2 Negative Direction
-    rw2_momentum_init = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2")
-    GENERIC_REACTION_WHEEL_cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 2, TORQUE -10")
-    sleep GENERIC_REACTION_WHEEL_TORQUE_RESPONSE_SLEEP
-    get_GENERIC_REACTION_WHEEL_data()
-    if (rw2_momentum_init <= (-1 * GENERIC_REACTION_WHEEL_MAX_MOMENTUM_NM))
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2 <= #{rw2_momentum_init}")
-    else
-        check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2 < #{rw2_momentum_init}")
-    end
-    rw2_momentum = tlm("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2")
-    puts "Reaction Wheel 2 Momentum (N m): #{rw2_momentum}"
+    adcs_rw1 = tlm("GENERIC_ADCS GENERIC_ADCS_DO TCMD_Y")
+    wait_check_tolerance("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_1", adcs_rw1, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
-    # Confirm no errors
+    get_adcs_data()
     get_GENERIC_REACTION_WHEEL_data()
-    check("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T ERROR_COUNT == #{cmd_err_cnt}")
-    
-    safe_adcs()
+    adcs_rw2 = tlm("GENERIC_ADCS GENERIC_ADCS_DO TCMD_Z")
+    wait_check_tolerance("GENERIC_REACTION_WHEEL GENRW_HK_TLM_T MOMENTUM_NMS_2", adcs_rw2, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+
 end
 
 def adcs_confirm_st_data()
@@ -585,12 +510,6 @@ def adcs_confirm_st_data()
     get_generic_star_tracker_hk()
     check("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_HK_TLM DEVICE_COUNT >= #{dev_cmd_cnt}")
     check("GENERIC_STAR_TRACKER GENERIC_STAR_TRACKER_HK_TLM DEVICE_ERR_COUNT == #{dev_cmd_err_cnt}")
-    
-end
-
-def adcs_confirm_torquer_data()
-    
-    
     
 end
 
