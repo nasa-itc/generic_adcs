@@ -5,9 +5,6 @@
 *******************************************************************************/
 #ifndef _GENERIC_ADCS_MSG_H_
 #define _GENERIC_ADCS_MSG_H_
-
-#include "cfe.h"
-
 /*
 ** Ground Command Codes
 */
@@ -26,27 +23,15 @@
 */
 #define GENERIC_ADCS_REQ_HK_TLM 0
 
-/*
-** Generic "no arguments" command type definition
-*/
 typedef struct
 {
     /* Every command requires a header used to identify it */
-    CFE_MSG_CommandHeader_t CmdHeader;
-
-} Generic_ADCS_NoArgs_cmd_t;
-
-typedef struct
-{
-    /* Every command requires a header used to identify it */
-    CFE_MSG_CommandHeader_t CmdHeader;
-    uint8                   Mode;
+    uint8_t                   Mode;
 } Generic_ADCS_Mode_cmd_t;
 
 typedef struct
 {
-    CFE_MSG_CommandHeader_t CmdHeader;
-    uint8                   MomentumManagement;
+    uint8_t                   MomentumManagement;
 } Generic_ADCS_MomentumManagement_cmd_t;
 
 /*
@@ -54,9 +39,8 @@ typedef struct
 */
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t TlmHeader;
-    uint8                     CommandErrorCount;
-    uint8                     CommandCount;
+    uint8_t                     CommandErrorCount;
+    uint8_t                     CommandCount;
 } __attribute__((packed)) Generic_ADCS_Hk_tlm_t;
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof(Generic_ADCS_Hk_tlm_t)
 
@@ -72,7 +56,7 @@ typedef struct
 typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
-    uint8  valid;
+    uint8_t  valid;
     double svb[3]; // sun vector from sensor in body frame
 } __attribute__((packed)) Generic_ADCS_DI_Fss_Tlm_Payload_t;
 
@@ -86,7 +70,7 @@ typedef struct
 typedef struct
 {
     Generic_ADCS_DI_Css_Sensor_Payload_t Sensor[6];
-    uint8                                valid;
+    uint8_t                                valid;
     double                               svb[3]; // sun vector from sensors in body frame
 } __attribute__((packed)) Generic_ADCS_DI_Css_Tlm_Payload_t;
 
@@ -94,7 +78,7 @@ typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
     double pos[3]; // position of sensor in body
-    uint8  valid;
+    uint8_t  valid;
     double wbn[3]; // angular rate
     double acc[3]; // acceleration
 } __attribute__((packed)) Generic_ADCS_DI_Imu_Tlm_Payload_t;
@@ -110,7 +94,7 @@ typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
     double q[4];
-    uint8  valid;
+    uint8_t  valid;
 } __attribute__((packed)) Generic_ADCS_DI_St_Tlm_Payload_t;
 
 typedef struct
@@ -125,7 +109,6 @@ typedef struct
 
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t     TlmHeader;
     Generic_ADCS_DI_Tlm_Payload_t Payload;
 } __attribute__((packed)) Generic_ADCS_DI_Tlm_t;
 #define GENERIC_ADCS_DI_LNGTH sizeof(Generic_ADCS_DI_Tlm_t)
@@ -140,16 +123,16 @@ typedef struct
 
 typedef struct
 {
-    uint8  SunValid;
-    uint8  FssValid;
+    uint8_t  SunValid;
+    uint8_t  FssValid;
     double svb[3];
 } __attribute__((packed)) Generic_ADCS_AD_Sol_Tlm_Payload_t;
 
 typedef struct
 {
-    uint8  init;
+    uint8_t  init;
     double alpha;
-    uint8  valid;
+    uint8_t  valid;
     double wbn_prev[3];
     double wbn[3];
     double acc[3];
@@ -164,7 +147,6 @@ typedef struct
 
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t     TlmHeader;
     Generic_ADCS_AD_Tlm_Payload_t Payload;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_t;
 #define GENERIC_ADCS_AD_LNGTH sizeof(Generic_ADCS_AD_Tlm_t)
@@ -178,7 +160,7 @@ typedef struct
     double b_range;
     double loFrac;
     double hiFrac;
-    uint8  mm_active[3];
+    uint8_t  mm_active[3];
     double Mcmd[3];
 } __attribute__((packed)) Generic_ADCS_GNC_Hmgmt_t;
 
@@ -186,12 +168,12 @@ typedef struct
 {
     double                   DT;
     double                   MaxMcmd;
-    uint8                    Mode;
-    uint8                    HmgmtOn;
+    uint8_t                    Mode;
+    uint8_t                    HmgmtOn;
     Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double                   bvb[3];
     double                   svb[3];
-    uint8                    SunValid;
+    uint8_t                    SunValid;
     double                   wbn[3];
     double                   HwhlMaxB[3];
     double                   HwhlB[3];
@@ -201,7 +183,6 @@ typedef struct
 
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t      TlmHeader;
     Generic_ADCS_GNC_Tlm_Payload_t Payload;
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_t;
 #define GENERIC_ADCS_GNC_LNGTH sizeof(Generic_ADCS_GNC_Tlm_t)
@@ -225,7 +206,7 @@ typedef struct
     double sside[3];
     double vmax;
     double cmd_wbn[3];
-    uint8  h_mgmt;
+    uint8_t  h_mgmt;
 
     /* Internal Variables */
     double therr[3];
@@ -242,7 +223,6 @@ typedef struct
 
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t     TlmHeader;
     Generic_ADCS_AC_Tlm_Payload_t Payload;
 } __attribute__((packed)) Generic_ADCS_AC_Tlm_t;
 #define GENERIC_ADCS_AC_LNGTH sizeof(Generic_ADCS_AC_Tlm_t)
@@ -270,7 +250,6 @@ typedef struct
 
 typedef struct
 {
-    CFE_MSG_TelemetryHeader_t     TlmHeader;
     Generic_ADCS_DO_Tlm_Payload_t Payload;
 } __attribute__((packed)) Generic_ADCS_DO_Tlm_t;
 #define GENERIC_ADCS_DO_LNGTH sizeof(Generic_ADCS_DO_Tlm_t)
