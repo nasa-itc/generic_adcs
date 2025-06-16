@@ -41,7 +41,7 @@ typedef struct
 {
     uint8_t                     CommandErrorCount;
     uint8_t                     CommandCount;
-} __attribute__((packed)) Generic_ADCS_Hk_tlm_t;
+} Generic_ADCS_Hk_tlm_t;
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof(Generic_ADCS_Hk_tlm_t)
 
 /*
@@ -51,28 +51,28 @@ typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
     double bvb[3]; // magnetic field measurement by sensor in body frame
-} __attribute__((packed)) Generic_ADCS_DI_Mag_Tlm_Payload_t;
+} Generic_ADCS_DI_Mag_Tlm_Payload_t;
 
 typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
     uint8_t  valid;
     double svb[3]; // sun vector from sensor in body frame
-} __attribute__((packed)) Generic_ADCS_DI_Fss_Tlm_Payload_t;
+} Generic_ADCS_DI_Fss_Tlm_Payload_t;
 
 typedef struct
 {
     double axis[3]; // CSS axis in body frame
     double scale;   // scale factor
     double percenton;
-} __attribute__((packed)) Generic_ADCS_DI_Css_Sensor_Payload_t;
+} Generic_ADCS_DI_Css_Sensor_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_DI_Css_Sensor_Payload_t Sensor[6];
     uint8_t                                valid;
     double                               svb[3]; // sun vector from sensors in body frame
-} __attribute__((packed)) Generic_ADCS_DI_Css_Tlm_Payload_t;
+} Generic_ADCS_DI_Css_Tlm_Payload_t;
 
 typedef struct
 {
@@ -81,21 +81,21 @@ typedef struct
     uint8_t  valid;
     double wbn[3]; // angular rate
     double acc[3]; // acceleration
-} __attribute__((packed)) Generic_ADCS_DI_Imu_Tlm_Payload_t;
+} Generic_ADCS_DI_Imu_Tlm_Payload_t;
 
 typedef struct
 {
     double whl_axis[3][3];
     double H_maxB[3];
     double HwhlB[3];
-} __attribute__((packed)) Generic_ADCS_DI_Rw_Tlm_Payload_t;
+} Generic_ADCS_DI_Rw_Tlm_Payload_t;
 
 typedef struct
 {
     double qbs[4]; // quaternion from sensor to body
     double q[4];
     uint8_t  valid;
-} __attribute__((packed)) Generic_ADCS_DI_St_Tlm_Payload_t;
+} Generic_ADCS_DI_St_Tlm_Payload_t;
 
 typedef struct
 {
@@ -105,12 +105,12 @@ typedef struct
     Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
     Generic_ADCS_DI_Rw_Tlm_Payload_t  Rw;
     Generic_ADCS_DI_St_Tlm_Payload_t  St;
-} __attribute__((packed)) Generic_ADCS_DI_Tlm_Payload_t;
+} Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_DI_Tlm_Payload_t Payload;
-} __attribute__((packed)) Generic_ADCS_DI_Tlm_t;
+} Generic_ADCS_DI_Tlm_t;
 #define GENERIC_ADCS_DI_LNGTH sizeof(Generic_ADCS_DI_Tlm_t)
 
 /*
@@ -119,14 +119,14 @@ typedef struct
 typedef struct
 {
     double bvb[3];
-} __attribute__((packed)) Generic_ADCS_AD_Mag_Tlm_Payload_t;
+} Generic_ADCS_AD_Mag_Tlm_Payload_t;
 
 typedef struct
 {
     uint8_t  SunValid;
     uint8_t  FssValid;
     double svb[3];
-} __attribute__((packed)) Generic_ADCS_AD_Sol_Tlm_Payload_t;
+} Generic_ADCS_AD_Sol_Tlm_Payload_t;
 
 typedef struct
 {
@@ -136,19 +136,19 @@ typedef struct
     double wbn_prev[3];
     double wbn[3];
     double acc[3];
-} __attribute__((packed)) Generic_ADCS_AD_Imu_Tlm_Payload_t;
+} Generic_ADCS_AD_Imu_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
-} __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
+} Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_AD_Tlm_Payload_t Payload;
-} __attribute__((packed)) Generic_ADCS_AD_Tlm_t;
+} Generic_ADCS_AD_Tlm_t;
 #define GENERIC_ADCS_AD_LNGTH sizeof(Generic_ADCS_AD_Tlm_t)
 
 /*
@@ -162,7 +162,7 @@ typedef struct
     double hiFrac;
     uint8_t  mm_active[3];
     double Mcmd[3];
-} __attribute__((packed)) Generic_ADCS_GNC_Hmgmt_t;
+} Generic_ADCS_GNC_Hmgmt_t;
 
 typedef struct
 {
@@ -179,12 +179,12 @@ typedef struct
     double                   HwhlB[3];
     double                   Mcmd[3];
     double                   Tcmd[3];
-} __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
+} Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_GNC_Tlm_Payload_t Payload;
-} __attribute__((packed)) Generic_ADCS_GNC_Tlm_t;
+} Generic_ADCS_GNC_Tlm_t;
 #define GENERIC_ADCS_GNC_LNGTH sizeof(Generic_ADCS_GNC_Tlm_t)
 
 /*
@@ -196,7 +196,7 @@ typedef struct
     double Kb;
     double bold[3];
     double bdot[3];
-} __attribute__((packed)) Generic_ADCS_AC_Bdot_Tlm_t;
+} Generic_ADCS_AC_Bdot_Tlm_t;
 
 typedef struct
 {
@@ -213,18 +213,18 @@ typedef struct
     double werr[3];
     double Tcmd[3];
     double err_t;
-} __attribute__((packed)) Generic_ADCS_AC_Sunsafe_Tlm_t;
+} Generic_ADCS_AC_Sunsafe_Tlm_t;
 
 typedef struct
 {
     Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
     Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
-} __attribute__((packed)) Generic_ADCS_AC_Tlm_Payload_t;
+} Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_AC_Tlm_Payload_t Payload;
-} __attribute__((packed)) Generic_ADCS_AC_Tlm_t;
+} Generic_ADCS_AC_Tlm_t;
 #define GENERIC_ADCS_AC_LNGTH sizeof(Generic_ADCS_AC_Tlm_t)
 
 /*
@@ -234,24 +234,24 @@ typedef struct
 {
     double qba[4]; // quaternion from actuator to body
     double Mcmd[3];
-} __attribute__((packed)) Generic_ADCS_DO_Trq_TlmPayload_t;
+} Generic_ADCS_DO_Trq_TlmPayload_t;
 
 typedef struct
 {
     double axis[3][3];
     double Tcmd[3];
-} __attribute__((packed)) Generic_ADCS_DO_Rw_TlmPayload_t;
+} Generic_ADCS_DO_Rw_TlmPayload_t;
 
 typedef struct
 {
     Generic_ADCS_DO_Trq_TlmPayload_t Trq;
     Generic_ADCS_DO_Rw_TlmPayload_t  Rw;
-} __attribute__((packed)) Generic_ADCS_DO_Tlm_Payload_t;
+} Generic_ADCS_DO_Tlm_Payload_t;
 
 typedef struct
 {
     Generic_ADCS_DO_Tlm_Payload_t Payload;
-} __attribute__((packed)) Generic_ADCS_DO_Tlm_t;
+} Generic_ADCS_DO_Tlm_t;
 #define GENERIC_ADCS_DO_LNGTH sizeof(Generic_ADCS_DO_Tlm_t)
 
 typedef struct
@@ -263,7 +263,7 @@ typedef struct
     uint8_t                   Direction_2;
     uint8_t                   PercentOn_2;
 
-} __attribute__((packed)) GENERIC_TORQUER_All_Percent_On_cmd_t;
+} GENERIC_TORQUER_All_Percent_On_cmd_t;
 #define GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN sizeof(GENERIC_TORQUER_All_Percent_On_cmd_t)
 
 typedef struct
@@ -271,7 +271,7 @@ typedef struct
     uint8_t                   wheel_number;
     int16_t                   data;
 
-} __attribute__((packed)) GENERIC_RW_Cmd_t;
+} GENERIC_RW_Cmd_t;
 #define GENERIC_RW_CMD_LEN sizeof(GENERIC_RW_Cmd_t)
 
 #endif
