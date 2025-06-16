@@ -254,4 +254,24 @@ typedef struct
 } __attribute__((packed)) Generic_ADCS_DO_Tlm_t;
 #define GENERIC_ADCS_DO_LNGTH sizeof(Generic_ADCS_DO_Tlm_t)
 
+typedef struct
+{
+    uint8_t                   Direction_0;
+    uint8_t                   PercentOn_0;
+    uint8_t                   Direction_1;
+    uint8_t                   PercentOn_1;
+    uint8_t                   Direction_2;
+    uint8_t                   PercentOn_2;
+
+} __attribute__((packed)) GENERIC_TORQUER_All_Percent_On_cmd_t;
+#define GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN sizeof(GENERIC_TORQUER_All_Percent_On_cmd_t)
+
+typedef struct
+{
+    uint8_t                   wheel_number;
+    int16_t                   data;
+
+} __attribute__((packed)) GENERIC_RW_Cmd_t;
+#define GENERIC_RW_CMD_LEN sizeof(GENERIC_RW_Cmd_t)
+
 #endif
