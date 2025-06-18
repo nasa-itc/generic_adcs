@@ -17,6 +17,7 @@
 #define GENERIC_ADCS_SEND_AC_CMD_CC             6
 #define GENERIC_ADCS_SEND_DO_CMD_CC             7
 #define GENERIC_ADCS_SET_MOMENTUM_MANAGEMENT_CC 8
+#define GENERIC_ADCS_INERTIAL_QUATERNION_CC     9
 
 /*
 ** Telemetry Request Command Codes
@@ -33,6 +34,11 @@ typedef struct
 {
     uint8_t                   MomentumManagement;
 } Generic_ADCS_MomentumManagement_cmd_t;
+
+typedef struct
+{
+    double                  qbn[4];
+} Generic_ADCS_Quat_cmd_t;
 
 /*
 ** Generic_ADCS housekeeping type definition
@@ -140,9 +146,16 @@ typedef struct
 
 typedef struct
 {
+    uint8_t  Valid;  /* [-] data validity flag */
+    double qbn[4]; /* [-] quaternion expressed in body frame */
+} Generic_ADCS_AD_ST_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
+    Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
 } Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct
@@ -168,17 +181,20 @@ typedef struct
 {
     double                   DT;
     double                   MaxMcmd;
-    uint8_t                    Mode;
-    uint8_t                    HmgmtOn;
+    uint8_t                  Mode;
+    uint8_t                  HmgmtOn;
     Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double                   bvb[3];
     double                   svb[3];
-    uint8_t                    SunValid;
+    uint8_t                  SunValid;
     double                   wbn[3];
     double                   HwhlMaxB[3];
     double                   HwhlB[3];
     double                   Mcmd[3];
     double                   Tcmd[3];
+    uint8_t                  qValid;
+    double                   qbn[4];
+    double                   qErr[4];
 } Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
@@ -217,8 +233,27 @@ typedef struct
 
 typedef struct
 {
+    /* Inputs*/
+    double Kp[3];
+    double Kr[3];
+    double Ki[3];
+    double phiErr_max;
+    double qbn_cmd[4];
+    long   h_mgmt;
+
+    /* Internal Variables */
+    double therr[3];
+    double sumtherr[3];
+    double qErr[4];
+    double werr[3];
+    double Tcmd[3];
+} Generic_ADCS_AC_Inertial_Tlm_t;
+
+typedef struct
+{
     Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
     Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
+    Generic_ADCS_AC_Inertial_Tlm_t Inertial;
 } Generic_ADCS_AC_Tlm_Payload_t;
 
 typedef struct
