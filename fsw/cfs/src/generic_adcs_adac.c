@@ -21,6 +21,7 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
 static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS);
 static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static void rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD,
                                                                    Generic_ADCS_GNC_Tlm_Payload_t *GNC,
@@ -83,6 +84,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     {
         case BDOT_MODE:
             AC_bdot(GNC, &ACS->Bdot);
+            rw_momentum_dump(GNC);
             break;
 
         case SUNSAFE_MODE:
@@ -448,6 +450,24 @@ static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
         for (i = 0; i < 3; i++)
         {
             GNC->Hmgmt.Mcmd[i] = 0.0;
+        }
+    }
+}
+
+static void rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+    double h_mag = MAGV(GNC->HwhlB);
+    double h_max = MAGV(GNC->HwhlMaxB);
+    double Kr = 1;
+
+    if((h_mag / h_max) > 1E-6)
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            // Proportional Control to kill Momentum
+            double Tcmd_dump = -Kr * GNC->HwhlB[i];
+
+            GNC->Tcmd[i] += Tcmd_dump;
         }
     }
 }
