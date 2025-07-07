@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "generic_adcs_app.h"
+#include "generic_adcs_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_adac.h"
 
