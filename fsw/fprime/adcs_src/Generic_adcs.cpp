@@ -37,32 +37,38 @@ namespace Components {
 
   void Generic_adcs :: IMUin_handler(NATIVE_INT_TYPE portNum, F32 XLin, F32 YLin, F32 ZLin, F32 XAng, F32 YAng, F32 ZAng)
   {
-    ingest_imu(XLin, YLin, ZLin, XAng, YAng, ZAng, &DIPacket.Payload.Imu);
+    Generic_ADCS_ingest_generic_imu(XLin, YLin, ZLin, XAng, YAng, ZAng, &DIPacket.Payload.Imu);
+    this->tlmWrite_ingestIMUCount(++ingestIMUCount);
   }
 
   void Generic_adcs :: MAGin_handler( NATIVE_INT_TYPE portNum, I32 MagX, I32 MagY, I32 MagZ)
   {
-    ingest_mag(MagX, MagY, MagZ, &DIPacket.Payload.Mag);
+    Generic_ADCS_ingest_generic_mag(MagX, MagY, MagZ, &DIPacket.Payload.Mag);
+    this->tlmWrite_ingestMagCount(++ingestMagCount);
   }
 
   void Generic_adcs :: FSSin_handler( NATIVE_INT_TYPE portNum, F32 Alpha, F32 Beta, U8 Error)
   {
-    ingest_fss(Alpha, Beta, Error, &DIPacket.Payload.Fss);
+    Generic_ADCS_ingest_generic_fss(Alpha, Beta, Error, &DIPacket.Payload.Fss);
+    this->tlmWrite_ingestFSSCount(++ingestFSSCount);
   }
 
   void Generic_adcs :: CSSin_handler( NATIVE_INT_TYPE portNum, U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5)
   {
-    ingest_css(ADCV0, ADCV1, ADCV2, ADCV3, ADCV4, ADCV5, &DIPacket.Payload.Css);
+    Generic_ADCS_ingest_generic_css(ADCV0, ADCV1, ADCV2, ADCV3, ADCV4, ADCV5, &DIPacket.Payload.Css);
+    this->tlmWrite_ingestCSSCount(++ingestCSSCount);
   }
 
   void Generic_adcs :: RWin_handler( NATIVE_INT_TYPE portNum, F64 RW0, F64 RW1, F64 RW2)
   {
-    ingest_rw(RW0, RW1, RW2, &DIPacket.Payload.Rw);
+    Generic_ADCS_ingest_generic_rw(RW0, RW1, RW2, &DIPacket.Payload.Rw);
+    this->tlmWrite_ingestRWCount(++ingestRWCount);
   }
 
   void Generic_adcs :: STin_handler( NATIVE_INT_TYPE portNum, F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid)
   {
-    ingest_st(Q0, Q1, Q2, Q3, IsValid, &DIPacket.Payload.St);
+    Generic_ADCS_ingest_generic_st(Q0, Q1, Q2, Q3, IsValid, &DIPacket.Payload.St);
+    this->tlmWrite_ingestSTCount(++ingestSTCount);
   }
 
   void Generic_adcs :: updateData_handler(const NATIVE_INT_TYPE portNum, NATIVE_UINT_TYPE context)
@@ -216,9 +222,7 @@ namespace Components {
     DI->St.qbs[3] = 1.0;
   }
 
-  void Generic_adcs :: init_adac(Generic_ADCS_AD_Tlm_Payload_t *AD,
-                                      Generic_ADCS_GNC_Tlm_Payload_t *GNC,
-                                      Generic_ADCS_AC_Tlm_Payload_t  *ACS)
+  void Generic_adcs :: init_adac(Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t  *ACS)
   {
     //Hardcode instead of reading from the cfg
 
@@ -295,120 +299,120 @@ namespace Components {
     for(int i = 0; i < 3; i++) CurrentRw[i] = 0;
   }
 
-  void Generic_adcs :: ingest_mag(I32 MagIntX, I32 MagIntY, I32 MagIntZ, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
-  {
-    double bvs[3] = {(double)MagIntX, (double)MagIntY, (double)MagIntZ};
+//   void Generic_adcs :: ingest_mag(I32 MagIntX, I32 MagIntY, I32 MagIntZ, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
+//   {
+//     double bvs[3] = {(double)MagIntX, (double)MagIntY, (double)MagIntZ};
 
-    QxV(Mag->qbs, bvs, Mag->bvb);
+//     QxV(Mag->qbs, bvs, Mag->bvb);
 
-    Mag->bvb[0] *= NANO;
-    Mag->bvb[1] *= NANO;
-    Mag->bvb[2] *= NANO;
+//     Mag->bvb[0] *= NANO;
+//     Mag->bvb[1] *= NANO;
+//     Mag->bvb[2] *= NANO;
 
-    this->tlmWrite_ingestMagCount(++ingestMagCount);
-  }
+//     this->tlmWrite_ingestMagCount(++ingestMagCount);
+//   }
 
-  void Generic_adcs :: ingest_fss(F32 Alpha, F32 Beta, U8 Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
-  {
-    Fss->valid = 0;
-    if(Error == 0) Fss->valid = 1;
+//   void Generic_adcs :: ingest_fss(F32 Alpha, F32 Beta, U8 Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
+//   {
+//     Fss->valid = 0;
+//     if(Error == 0) Fss->valid = 1;
 
-    if(Fss->valid == 1)
-    {
-      double svs[3];
-      double ta = tan(Alpha);
-      double tb = tan(Beta);
-      svs[2] = 1.0 / sqrt(1 + ta*tb + tb*tb);
-      svs[0] = svs[2] * ta;
-      svs[1] = svs[2] * tb;
-      QxV(Fss->qbs, svs, Fss->svb);
-    }
-    else
-    {
-      Fss->svb[0] = 0.0;
-      Fss->svb[1] = 0.0;
-      Fss->svb[2] = 0.0;
-    }
+//     if(Fss->valid == 1)
+//     {
+//       double svs[3];
+//       double ta = tan(Alpha);
+//       double tb = tan(Beta);
+//       svs[2] = 1.0 / sqrt(1 + ta*tb + tb*tb);
+//       svs[0] = svs[2] * ta;
+//       svs[1] = svs[2] * tb;
+//       QxV(Fss->qbs, svs, Fss->svb);
+//     }
+//     else
+//     {
+//       Fss->svb[0] = 0.0;
+//       Fss->svb[1] = 0.0;
+//       Fss->svb[2] = 0.0;
+//     }
 
-    this->tlmWrite_ingestFSSCount(++ingestFSSCount);
-  }
+//     this->tlmWrite_ingestFSSCount(++ingestFSSCount);
+//   }
 
-  void Generic_adcs :: ingest_css(U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
-  {
-    Css->Sensor[0].percenton      = ADCV0 * Css->Sensor[0].scale;
-    Css->Sensor[1].percenton      = ADCV1 * Css->Sensor[1].scale;
-    Css->Sensor[2].percenton      = ADCV2 * Css->Sensor[2].scale;
-    Css->Sensor[3].percenton      = ADCV3 * Css->Sensor[3].scale;
-    Css->Sensor[4].percenton      = ADCV4 * Css->Sensor[4].scale;
-    Css->Sensor[5].percenton      = ADCV5 * Css->Sensor[5].scale;
+//   void Generic_adcs :: ingest_css(U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
+//   {
+//     Css->Sensor[0].percenton      = ADCV0 * Css->Sensor[0].scale;
+//     Css->Sensor[1].percenton      = ADCV1 * Css->Sensor[1].scale;
+//     Css->Sensor[2].percenton      = ADCV2 * Css->Sensor[2].scale;
+//     Css->Sensor[3].percenton      = ADCV3 * Css->Sensor[3].scale;
+//     Css->Sensor[4].percenton      = ADCV4 * Css->Sensor[4].scale;
+//     Css->Sensor[5].percenton      = ADCV5 * Css->Sensor[5].scale;
 
-    double svb[3] = {0.0, 0.0, 0.0};
-    for (int i = 0; i < 6; i++)
-    {
-        svb[0] += Css->Sensor[i].axis[0] * Css->Sensor[i].percenton;
-        svb[1] += Css->Sensor[i].axis[1] * Css->Sensor[i].percenton;
-        svb[2] += Css->Sensor[i].axis[2] * Css->Sensor[i].percenton;
-    }
-    UNITV(svb);
+//     double svb[3] = {0.0, 0.0, 0.0};
+//     for (int i = 0; i < 6; i++)
+//     {
+//         svb[0] += Css->Sensor[i].axis[0] * Css->Sensor[i].percenton;
+//         svb[1] += Css->Sensor[i].axis[1] * Css->Sensor[i].percenton;
+//         svb[2] += Css->Sensor[i].axis[2] * Css->Sensor[i].percenton;
+//     }
+//     UNITV(svb);
 
-    Css->svb[0] = svb[0];
-    Css->svb[1] = svb[1];
-    Css->svb[2] = svb[2];
-    if (MAGV(svb) > 0.0)
-    {
-        Css->valid = 1;
-    }
-    else
-    {
-        Css->valid = 0;
-    }
+//     Css->svb[0] = svb[0];
+//     Css->svb[1] = svb[1];
+//     Css->svb[2] = svb[2];
+//     if (MAGV(svb) > 0.0)
+//     {
+//         Css->valid = 1;
+//     }
+//     else
+//     {
+//         Css->valid = 0;
+//     }
 
-    this->tlmWrite_ingestCSSCount(++ingestCSSCount);
-  }
+//     this->tlmWrite_ingestCSSCount(++ingestCSSCount);
+//   }
 
-  void Generic_adcs :: ingest_imu(F32 LinX, F32 LinY, F32 LinZ, F32 AngX, F32 AngY, F32 AngZ, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
-  {
-    double wsn[3] = {AngX, AngY, AngZ};
-    QxV(Imu->qbs, wsn, Imu->wbn);
+//   void Generic_adcs :: ingest_imu(F32 LinX, F32 LinY, F32 LinZ, F32 AngX, F32 AngY, F32 AngZ, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
+//   {
+//     double wsn[3] = {AngX, AngY, AngZ};
+//     QxV(Imu->qbs, wsn, Imu->wbn);
 
-    double acc[3] = {LinX, LinY, LinZ};
-    QxV(Imu->qbs, acc, Imu->acc);
-    Imu->valid = 1;
+//     double acc[3] = {LinX, LinY, LinZ};
+//     QxV(Imu->qbs, acc, Imu->acc);
+//     Imu->valid = 1;
 
-    this->tlmWrite_ingestIMUCount(++ingestIMUCount);
-  }
+//     this->tlmWrite_ingestIMUCount(++ingestIMUCount);
+//   }
 
-  void Generic_adcs :: ingest_rw(F64 RW0, F64 RW1, F64 RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
-  {
-    double H_in_body[3] = {0.0, 0.0, 0.0};
-    double rwMomentums[3] = {RW0, RW1, RW2};
+//   void Generic_adcs :: ingest_rw(F64 RW0, F64 RW1, F64 RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
+//   {
+//     double H_in_body[3] = {0.0, 0.0, 0.0};
+//     double rwMomentums[3] = {RW0, RW1, RW2};
 
-    for(int i = 0; i < 3; i++)
-    {
-      Rw->HwhlB[i] = 0.0;
-    }
+//     for(int i = 0; i < 3; i++)
+//     {
+//       Rw->HwhlB[i] = 0.0;
+//     }
     
-    for(int whl = 0; whl < 3; whl++)
-    {
-      SxV(rwMomentums[whl], Rw->whl_axis[whl], H_in_body);
+//     for(int whl = 0; whl < 3; whl++)
+//     {
+//       SxV(rwMomentums[whl], Rw->whl_axis[whl], H_in_body);
 
-      for(int i = 0; i < 3; i++)
-      {
-        Rw->HwhlB[i] += H_in_body[i];
-      }
-    }
+//       for(int i = 0; i < 3; i++)
+//       {
+//         Rw->HwhlB[i] += H_in_body[i];
+//       }
+//     }
 
-    this->tlmWrite_ingestRWCount(++ingestRWCount);
-  }
+//     this->tlmWrite_ingestRWCount(++ingestRWCount);
+//   }
 
-  void Generic_adcs :: ingest_st(F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid, Generic_ADCS_DI_St_Tlm_Payload_t *St)
-  {
-    St->valid = IsValid;
-    double q[4] = {Q0, Q1, Q2, Q3};
-    QxQ(q, St->qbs, St->q);
+//   void Generic_adcs :: ingest_st(F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid, Generic_ADCS_DI_St_Tlm_Payload_t *St)
+//   {
+//     St->valid = IsValid;
+//     double q[4] = {Q0, Q1, Q2, Q3};
+//     QxQ(q, St->qbs, St->q);
 
-    this->tlmWrite_ingestSTCount(++ingestSTCount);
-  }
+//     this->tlmWrite_ingestSTCount(++ingestSTCount);
+//   }
 
   void Generic_adcs :: exec_adac(const Generic_ADCS_DI_Tlm_Payload_t *DI,
                                  Generic_ADCS_AD_Tlm_Payload_t       *AD,

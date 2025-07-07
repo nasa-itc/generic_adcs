@@ -11,6 +11,7 @@
 
 extern "C"{
   #include "generic_adcs_utilities.h"
+  #include "generic_adcs_ingest.h"
   #include "generic_adcs_msg.h"
 }
 
@@ -154,17 +155,17 @@ namespace Components {
 
       // all of these ingests need fprime ports with input from respective components
       // periodic or event-based update
-      void ingest_mag(I32 MagIntX, I32 MagIntY, I32 MagIntZ, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag);
+      // void ingest_mag(I32 MagIntX, I32 MagIntY, I32 MagIntZ, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag);
 
-      void ingest_fss(F32 Alpha, F32 Beta, U8 Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss);
+      // void ingest_fss(F32 Alpha, F32 Beta, U8 Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss);
 
-      void ingest_css(U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css);
+      // void ingest_css(U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css);
 
-      void ingest_imu(F32 LinX, F32 LinY, F32 LinZ, F32 AngX, F32 AngY, F32 AngZ, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu);
+      // void ingest_imu(F32 LinX, F32 LinY, F32 LinZ, F32 AngX, F32 AngY, F32 AngZ, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu);
 
-      void ingest_rw(F64 RW0, F64 RW1, F64 RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw);
+      // void ingest_rw(F64 RW0, F64 RW1, F64 RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw);
 
-      void ingest_st(F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid, Generic_ADCS_DI_St_Tlm_Payload_t *St);
+      // void ingest_st(F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid, Generic_ADCS_DI_St_Tlm_Payload_t *St);
 
       // needs to be called periodically or after an ingest is called
       void exec_adac( const Generic_ADCS_DI_Tlm_Payload_t *DI,

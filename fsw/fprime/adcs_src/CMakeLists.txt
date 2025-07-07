@@ -14,6 +14,7 @@ set(SOURCE_FILES
   "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.fpp"
   "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_utilities.c"
+  "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_ingest.c"
 )
 
 # Uncomment and add any modules that this component depends on, else
