@@ -455,7 +455,7 @@ static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
     }
 }
 
-void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
     {
         double h_mag = MAGV(GNC->HwhlB);
         double h_max = MAGV(GNC->HwhlMaxB);

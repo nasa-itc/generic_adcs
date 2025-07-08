@@ -7,9 +7,10 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "generic_adcs_app.h"
+#include "generic_adcs_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_adac.h"
+#include <stdbool.h>
 
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
@@ -21,7 +22,7 @@ static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tl
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
 static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS);
 static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
-static void rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD,
                                                                    Generic_ADCS_GNC_Tlm_Payload_t *GNC,
@@ -84,7 +85,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     {
         case BDOT_MODE:
             AC_bdot(GNC, &ACS->Bdot);
-            rw_momentum_dump(GNC);
+            AC_rw_momentum_dump(GNC);
             break;
 
         case SUNSAFE_MODE:
@@ -454,20 +455,20 @@ static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
     }
 }
 
-static void rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
-{
-    double h_mag = MAGV(GNC->HwhlB);
-    double h_max = MAGV(GNC->HwhlMaxB);
-    double Kr = 1;
-
-    if((h_mag / h_max) > 1E-6)
+static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
     {
-        for(int i = 0; i < 3; i++)
-        {
-            // Proportional Control to kill Momentum
-            double Tcmd_dump = -Kr * GNC->HwhlB[i];
+        double h_mag = MAGV(GNC->HwhlB);
+        double h_max = MAGV(GNC->HwhlMaxB);
+        double Kr = 1.0;
 
-            GNC->Tcmd[i] += Tcmd_dump;
+        if((h_mag / h_max) > 1E-6)
+        {
+            for(int i = 0; i < 3; i++)
+            {
+                // Proportional Control, Momentum --> 0
+                double Tcmd_dump = -Kr * GNC->HwhlB[i];
+
+                GNC->Tcmd[i] += Tcmd_dump;
+            }
         }
     }
-}

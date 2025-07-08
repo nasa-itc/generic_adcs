@@ -9,11 +9,12 @@
 
 include_directories("../../../../../fsw/apps/hwlib/fsw/public_inc")
 include_directories("../src")
+include_directories("../../shared")
 
 set(SOURCE_FILES
   "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.fpp"
   "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_utilities.c"
+  "${CMAKE_CURRENT_LIST_DIR}/../../shared/generic_adcs_utilities.c"
   "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_ingest.c"
   "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_adac.c"
 )
