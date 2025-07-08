@@ -8,6 +8,9 @@
 #define Components_Generic_adcs_HPP
 
 #include "adcs_src/Generic_adcsComponentAc.hpp"
+#include "adcs_src/Generic_adcs_adcs_modeEnumAc.hpp"
+#include "adcs_src/Generic_adcs_adcs_mgmt_stateEnumAc.hpp"
+
 
 extern "C"{
   #include "generic_adcs_utilities.h"
@@ -145,6 +148,27 @@ namespace Components {
         F64 QW
       ) override;
 
+      void NOOP_cmdHandler(
+        FwOpcodeType opCode,
+        U32 cmdSeq
+      ) override;
+
+      void RESET_COUNTERS_cmdHandler(
+        FwOpcodeType opCode,
+        U32 cmdSeq
+      ) override;
+
+      void REQUEST_HOUSEKEEPING_cmdHandler(
+        FwOpcodeType opCode,
+        U32 cmdSeq
+      ) override;
+
+      void SET_MOMENTUM_MANAGEMENT_cmdHandler(
+        FwOpcodeType opCode,
+        U32 cmdSeq,
+        Generic_adcs_adcs_mgmt_state STATE
+      ) override;
+
       //refactor everything below eventually
 
       void ingest_init(Generic_ADCS_DI_Tlm_Payload_t *DI);
@@ -163,6 +187,10 @@ namespace Components {
       void mcmd_to_percent_direction(double Mcmd, uint8_t *percent, uint8_t *direction);
 
       void send_rw_commands(double Tcmd[3], Generic_ADCS_DO_Rw_TlmPayload_t *DO, GENERIC_RW_Cmd_t *RwCmd);
+
+      inline Generic_adcs_adcs_mode get_adcs_mode(uint8_t mode);
+
+      inline Generic_adcs_adcs_mgmt_state get_adcs_mgmt_state(uint8_t state);
 
   };
 

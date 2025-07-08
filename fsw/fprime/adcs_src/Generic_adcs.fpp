@@ -13,6 +13,11 @@ module Components {
             INERTIAL @< INERTIAL Mode
         }
 
+        enum adcs_mgmt_state {
+            OFF @< MOMENTUM MGMT OFF
+            ON @< MOMENTUM MGMT ON
+        }
+
         @ IMU Data input
         async input port IMUin: IMUDataPort
 
@@ -52,6 +57,22 @@ module Components {
             QW: F64 @< QW (Real Part)
         )
 
+        async command NOOP()
+
+        async command RESET_COUNTERS()
+
+        async command REQUEST_HOUSEKEEPING()
+
+        async command SET_MOMENTUM_MANAGEMENT(
+            STATE: adcs_mgmt_state
+        )
+
+        @ Command Counter
+        telemetry CommandCount: U32
+
+        @ Command Error Counter
+        telemetry CommandErrorCount: U32
+
         @ Counter for keeping track of IMU updating
         telemetry ingestIMUCount: U32
 
@@ -72,6 +93,9 @@ module Components {
 
         @ ADCS Current Mode
         telemetry ADCSMode: adcs_mode
+
+        @ ADCS Momentum Management State
+        telemetry ADCSMomentumManagement: adcs_mgmt_state
 
         @ Counter for keeping track of IMU updating
         telemetry ingestPASSIVE: U32
@@ -98,7 +122,7 @@ module Components {
 
         @ Greeting event with maximum greeting length of 40 characters
         event TELEM(
-            log_info: string size 40 @< 
+            log_info: string size 50 @< 
         ) severity activity high format "Generic_adcs: {}"
 
 

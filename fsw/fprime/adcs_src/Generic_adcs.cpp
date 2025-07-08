@@ -23,6 +23,8 @@ namespace Components {
     init_adac(&ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
     init_output(&DOPacket.Payload);
     
+    HkTelemetryPkt.CommandCount = 0;
+    HkTelemetryPkt.CommandErrorCount = 0;
   }
 
   Generic_adcs ::
@@ -120,8 +122,65 @@ namespace Components {
         this->tlmWrite_INERTIALQUATERNIONZ(QZ);
         this->tlmWrite_INERTIALQUATERNIONW(QW);
 
+        char quatMsg[50];
+        sprintf(quatMsg, "Set inertial quat to (%.3lf,%.3lf,%.3lf,%.3lf)", QW, QX, QY, QZ);
+        this->log_ACTIVITY_HI_TELEM(quatMsg);
+
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 
+  }
+
+  void Generic_adcs :: NOOP_cmdHandler(FwOpcodeType opCode, U32 cmdSeq)
+  {
+    HkTelemetryPkt.CommandCount++;
+
+    this->log_ACTIVITY_HI_TELEM("NOOP SENT");
+    this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
+    this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
+    this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
+    this->tlmWrite_ADCSMomentumManagement(get_adcs_mgmt_state(GNCPacket.Payload.HmgmtOn));
+
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+  }
+
+  void Generic_adcs :: RESET_COUNTERS_cmdHandler(FwOpcodeType opCode, U32 cmdSeq)
+  {
+    HkTelemetryPkt.CommandCount = 0;
+    HkTelemetryPkt.CommandErrorCount = 0;
+
+    this->log_ACTIVITY_HI_TELEM("Reset Counters command successful!");
+    this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
+    this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+  }
+
+
+  void Generic_adcs :: REQUEST_HOUSEKEEPING_cmdHandler(FwOpcodeType opCode, U32 cmdSeq)
+  {
+    this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
+    this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
+    this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
+    this->tlmWrite_ADCSMomentumManagement(get_adcs_mgmt_state(GNCPacket.Payload.HmgmtOn));
+
+    this->log_ACTIVITY_HI_TELEM("Requested Housekeeping successfully!");
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+  }
+
+  void Generic_adcs :: SET_MOMENTUM_MANAGEMENT_cmdHandler(FwOpcodeType opCode, U32 cmdSeq, Generic_adcs_adcs_mgmt_state STATE)
+  {
+    GNCPacket.Payload.HmgmtOn = STATE.e;
+
+    this->tlmWrite_ADCSMomentumManagement(STATE);
+
+    if(STATE.e){
+      this->log_ACTIVITY_HI_TELEM("Momentum Management ON!");
+    }
+    else
+    {
+      this->log_ACTIVITY_HI_TELEM("Momentum Management OFF!");
+    }
+
+    this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
   }
 
   void Generic_adcs :: ingest_init(Generic_ADCS_DI_Tlm_Payload_t *DI)
@@ -368,5 +427,47 @@ namespace Components {
         if(new_rw_cmds) this->RWOUTout_out(0, torque[0], torque[1], torque[2]);
     }
 
+    inline Generic_adcs_adcs_mode Generic_adcs :: get_adcs_mode(uint8_t mode)
+    {
+      Generic_adcs_adcs_mode modeEnum;
+
+      switch(mode)
+      {
+        case BDOT_MODE:
+            modeEnum.e = Generic_adcs_adcs_mode::BDOT;
+            break;
+
+        case SUNSAFE_MODE:
+            modeEnum.e = Generic_adcs_adcs_mode::SUNSAFE;
+            break;
+
+        case INERTIAL_MODE:
+            modeEnum.e = Generic_adcs_adcs_mode::INERTIAL;
+            break;
+
+        case PASSIVE_MODE:
+        default:
+            modeEnum.e = Generic_adcs_adcs_mode::PASSIVE;
+            break;
+      }
+
+      return modeEnum;
+    }
+
+    inline Generic_adcs_adcs_mgmt_state Generic_adcs :: get_adcs_mgmt_state(uint8_t state)
+    {
+      Generic_adcs_adcs_mgmt_state stateEnum;
+
+      if(state)
+      {
+        stateEnum.e = Generic_adcs_adcs_mgmt_state::ON;
+      }
+      else
+      {
+        stateEnum.e = Generic_adcs_adcs_mgmt_state::OFF;
+      }
+
+      return stateEnum;
+    }
 
 }
