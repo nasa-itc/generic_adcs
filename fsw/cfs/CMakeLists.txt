@@ -5,8 +5,9 @@ include(../../../ComponentSettings.cmake)
 
 include_directories(mission_inc)
 include_directories(platform_inc)
-include_directories(src)
 include_directories(../shared)
+include_directories(src)
+
 include_directories(../../../generic_mag/fsw/cfs/platform_inc)
 include_directories(../../../generic_mag/fsw/cfs/src)
 include_directories(../../../generic_mag/fsw/shared)
@@ -31,6 +32,7 @@ include_directories(../../../generic_star_tracker/fsw/shared)
 include_directories(${hwlib_MISSION_DIR}/fsw/public_inc)
 
 aux_source_directory(src APP_SRC_FILES)
+aux_source_directory(../shared APP_SRC_FILES)
 
 # Create the app module
 add_cfe_app(generic_adcs ${APP_SRC_FILES})
