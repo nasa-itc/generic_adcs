@@ -460,8 +460,9 @@ static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC)
         double h_mag = MAGV(GNC->HwhlB);
         double h_max = MAGV(GNC->HwhlMaxB);
         double Kr = 1.0;
+        double threshold = 1E-6;
 
-        if((h_mag / h_max) > 1E-6)
+        if((h_mag / h_max) > threshold)
         {
             for(int i = 0; i < 3; i++)
             {
