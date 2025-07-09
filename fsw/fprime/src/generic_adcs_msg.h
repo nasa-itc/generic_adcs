@@ -27,17 +27,17 @@
 typedef struct
 {
     /* Every command requires a header used to identify it */
-    __uint8_t                   Mode;
+    __uint8_t Mode;
 } Generic_ADCS_Mode_cmd_t;
 
 typedef struct
 {
-    __uint8_t                   MomentumManagement;
+    __uint8_t MomentumManagement;
 } Generic_ADCS_MomentumManagement_cmd_t;
 
 typedef struct
 {
-    double                  qbn[4];
+    double qbn[4];
 } Generic_ADCS_Quat_cmd_t;
 
 /*
@@ -45,8 +45,8 @@ typedef struct
 */
 typedef struct
 {
-    __uint8_t                     CommandErrorCount;
-    __uint8_t                     CommandCount;
+    __uint8_t CommandErrorCount;
+    __uint8_t CommandCount;
 } Generic_ADCS_Hk_tlm_t;
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof(Generic_ADCS_Hk_tlm_t)
 
@@ -61,9 +61,9 @@ typedef struct
 
 typedef struct
 {
-    double qbs[4]; // quaternion from sensor to body
-    __uint8_t  valid;
-    double svb[3]; // sun vector from sensor in body frame
+    double    qbs[4]; // quaternion from sensor to body
+    __uint8_t valid;
+    double    svb[3]; // sun vector from sensor in body frame
 } Generic_ADCS_DI_Fss_Tlm_Payload_t;
 
 typedef struct
@@ -76,17 +76,17 @@ typedef struct
 typedef struct
 {
     Generic_ADCS_DI_Css_Sensor_Payload_t Sensor[6];
-    __uint8_t                                valid;
+    __uint8_t                            valid;
     double                               svb[3]; // sun vector from sensors in body frame
 } Generic_ADCS_DI_Css_Tlm_Payload_t;
 
 typedef struct
 {
-    double qbs[4]; // quaternion from sensor to body
-    double pos[3]; // position of sensor in body
-    __uint8_t  valid;
-    double wbn[3]; // angular rate
-    double acc[3]; // acceleration
+    double    qbs[4]; // quaternion from sensor to body
+    double    pos[3]; // position of sensor in body
+    __uint8_t valid;
+    double    wbn[3]; // angular rate
+    double    acc[3]; // acceleration
 } Generic_ADCS_DI_Imu_Tlm_Payload_t;
 
 typedef struct
@@ -98,9 +98,9 @@ typedef struct
 
 typedef struct
 {
-    double qbs[4]; // quaternion from sensor to body
-    double q[4];
-    __uint8_t  valid;
+    double    qbs[4]; // quaternion from sensor to body
+    double    q[4];
+    __uint8_t valid;
 } Generic_ADCS_DI_St_Tlm_Payload_t;
 
 typedef struct
@@ -129,25 +129,25 @@ typedef struct
 
 typedef struct
 {
-    __uint8_t  SunValid;
-    __uint8_t  FssValid;
-    double svb[3];
+    __uint8_t SunValid;
+    __uint8_t FssValid;
+    double    svb[3];
 } Generic_ADCS_AD_Sol_Tlm_Payload_t;
 
 typedef struct
 {
-    __uint8_t  init;
-    double alpha;
-    __uint8_t  valid;
-    double wbn_prev[3];
-    double wbn[3];
-    double acc[3];
+    __uint8_t init;
+    double    alpha;
+    __uint8_t valid;
+    double    wbn_prev[3];
+    double    wbn[3];
+    double    acc[3];
 } Generic_ADCS_AD_Imu_Tlm_Payload_t;
 
 typedef struct
 {
-    __uint8_t  Valid;  /* [-] data validity flag */
-    double qbn[4]; /* [-] quaternion expressed in body frame */
+    __uint8_t Valid;  /* [-] data validity flag */
+    double    qbn[4]; /* [-] quaternion expressed in body frame */
 } Generic_ADCS_AD_ST_Tlm_Payload_t;
 
 typedef struct
@@ -169,30 +169,30 @@ typedef struct
 */
 typedef struct
 {
-    double Kb;
-    double b_range;
-    double loFrac;
-    double hiFrac;
-    __uint8_t  mm_active[3];
-    double Mcmd[3];
+    double    Kb;
+    double    b_range;
+    double    loFrac;
+    double    hiFrac;
+    __uint8_t mm_active[3];
+    double    Mcmd[3];
 } Generic_ADCS_GNC_Hmgmt_t;
 
 typedef struct
 {
     double                   DT;
     double                   MaxMcmd;
-    __uint8_t                  Mode;
-    __uint8_t                  HmgmtOn;
+    __uint8_t                Mode;
+    __uint8_t                HmgmtOn;
     Generic_ADCS_GNC_Hmgmt_t Hmgmt;
     double                   bvb[3];
     double                   svb[3];
-    __uint8_t                  SunValid;
+    __uint8_t                SunValid;
     double                   wbn[3];
     double                   HwhlMaxB[3];
     double                   HwhlB[3];
     double                   Mcmd[3];
     double                   Tcmd[3];
-    __uint8_t                  qValid;
+    __uint8_t                qValid;
     double                   qbn[4];
     double                   qErr[4];
 } Generic_ADCS_GNC_Tlm_Payload_t;
@@ -217,12 +217,12 @@ typedef struct
 typedef struct
 {
     /* Inputs*/
-    double Kp[3];
-    double Kr[3];
-    double sside[3];
-    double vmax;
-    double cmd_wbn[3];
-    __uint8_t  h_mgmt;
+    double    Kp[3];
+    double    Kr[3];
+    double    sside[3];
+    double    vmax;
+    double    cmd_wbn[3];
+    __uint8_t h_mgmt;
 
     /* Internal Variables */
     double therr[3];
@@ -251,8 +251,8 @@ typedef struct
 
 typedef struct
 {
-    Generic_ADCS_AC_Bdot_Tlm_t    Bdot;
-    Generic_ADCS_AC_Sunsafe_Tlm_t Sunsafe;
+    Generic_ADCS_AC_Bdot_Tlm_t     Bdot;
+    Generic_ADCS_AC_Sunsafe_Tlm_t  Sunsafe;
     Generic_ADCS_AC_Inertial_Tlm_t Inertial;
 } Generic_ADCS_AC_Tlm_Payload_t;
 
@@ -291,20 +291,20 @@ typedef struct
 
 typedef struct
 {
-    __uint8_t                   Direction_0;
-    __uint8_t                   PercentOn_0;
-    __uint8_t                   Direction_1;
-    __uint8_t                   PercentOn_1;
-    __uint8_t                   Direction_2;
-    __uint8_t                   PercentOn_2;
+    __uint8_t Direction_0;
+    __uint8_t PercentOn_0;
+    __uint8_t Direction_1;
+    __uint8_t PercentOn_1;
+    __uint8_t Direction_2;
+    __uint8_t PercentOn_2;
 
 } GENERIC_TORQUER_All_Percent_On_cmd_t;
 #define GENERIC_TORQUER_ALL_PERCENT_ON_CMD_LEN sizeof(GENERIC_TORQUER_All_Percent_On_cmd_t)
 
 typedef struct
 {
-    __uint8_t                   wheel_number;
-    __int16_t                   data;
+    __uint8_t wheel_number;
+    __int16_t data;
 
 } GENERIC_RW_Cmd_t;
 #define GENERIC_RW_CMD_LEN sizeof(GENERIC_RW_Cmd_t)

@@ -69,8 +69,9 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
            &newline);
 }
 
- void Generic_ADCS_ingest_generic_mag(__int32_t MagIntX, __int32_t MagIntY, __int32_t MagIntZ, Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
-  {
+void Generic_ADCS_ingest_generic_mag(__int32_t MagIntX, __int32_t MagIntY, __int32_t MagIntZ,
+                                     Generic_ADCS_DI_Mag_Tlm_Payload_t *Mag)
+{
     double bvs[3] = {(double)MagIntX, (double)MagIntY, (double)MagIntZ};
 
     QxV(Mag->qbs, bvs, Mag->bvb);
@@ -78,41 +79,41 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     Mag->bvb[0] *= NANO;
     Mag->bvb[1] *= NANO;
     Mag->bvb[2] *= NANO;
+}
 
-  }
-
-  void Generic_ADCS_ingest_generic_fss(float Alpha, float Beta, __uint8_t Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
-  {
+void Generic_ADCS_ingest_generic_fss(float Alpha, float Beta, __uint8_t Error, Generic_ADCS_DI_Fss_Tlm_Payload_t *Fss)
+{
     Fss->valid = 0;
-    if(Error == 0) Fss->valid = 1;
+    if (Error == 0)
+        Fss->valid = 1;
 
-    if(Fss->valid == 1)
+    if (Fss->valid == 1)
     {
-      double svs[3];
-      double ta = tan(Alpha);
-      double tb = tan(Beta);
-      svs[2] = 1.0 / sqrt(1 + ta*tb + tb*tb);
-      svs[0] = svs[2] * ta;
-      svs[1] = svs[2] * tb;
-      QxV(Fss->qbs, svs, Fss->svb);
+        double svs[3];
+        double ta = tan(Alpha);
+        double tb = tan(Beta);
+        svs[2]    = 1.0 / sqrt(1 + ta * tb + tb * tb);
+        svs[0]    = svs[2] * ta;
+        svs[1]    = svs[2] * tb;
+        QxV(Fss->qbs, svs, Fss->svb);
     }
     else
     {
-      Fss->svb[0] = 0.0;
-      Fss->svb[1] = 0.0;
-      Fss->svb[2] = 0.0;
+        Fss->svb[0] = 0.0;
+        Fss->svb[1] = 0.0;
+        Fss->svb[2] = 0.0;
     }
+}
 
-  }
-
-  void Generic_ADCS_ingest_generic_css(__uint16_t ADCV0, __uint16_t ADCV1, __uint16_t ADCV2, __uint16_t ADCV3, __uint16_t ADCV4, __uint16_t ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
-  {
-    Css->Sensor[0].percenton      = ADCV0 * Css->Sensor[0].scale;
-    Css->Sensor[1].percenton      = ADCV1 * Css->Sensor[1].scale;
-    Css->Sensor[2].percenton      = ADCV2 * Css->Sensor[2].scale;
-    Css->Sensor[3].percenton      = ADCV3 * Css->Sensor[3].scale;
-    Css->Sensor[4].percenton      = ADCV4 * Css->Sensor[4].scale;
-    Css->Sensor[5].percenton      = ADCV5 * Css->Sensor[5].scale;
+void Generic_ADCS_ingest_generic_css(__uint16_t ADCV0, __uint16_t ADCV1, __uint16_t ADCV2, __uint16_t ADCV3,
+                                     __uint16_t ADCV4, __uint16_t ADCV5, Generic_ADCS_DI_Css_Tlm_Payload_t *Css)
+{
+    Css->Sensor[0].percenton = ADCV0 * Css->Sensor[0].scale;
+    Css->Sensor[1].percenton = ADCV1 * Css->Sensor[1].scale;
+    Css->Sensor[2].percenton = ADCV2 * Css->Sensor[2].scale;
+    Css->Sensor[3].percenton = ADCV3 * Css->Sensor[3].scale;
+    Css->Sensor[4].percenton = ADCV4 * Css->Sensor[4].scale;
+    Css->Sensor[5].percenton = ADCV5 * Css->Sensor[5].scale;
 
     double svb[3] = {0.0, 0.0, 0.0};
     for (int i = 0; i < 6; i++)
@@ -134,46 +135,44 @@ void Generic_ADCS_ingest_init(FILE *in, Generic_ADCS_DI_Tlm_Payload_t *DI)
     {
         Css->valid = 0;
     }
+}
 
-  }
-
-  void Generic_ADCS_ingest_generic_imu(float LinX, float LinY, float LinZ, float AngX, float AngY, float AngZ, Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
-  {
+void Generic_ADCS_ingest_generic_imu(float LinX, float LinY, float LinZ, float AngX, float AngY, float AngZ,
+                                     Generic_ADCS_DI_Imu_Tlm_Payload_t *Imu)
+{
     double wsn[3] = {AngX, AngY, AngZ};
     QxV(Imu->qbs, wsn, Imu->wbn);
 
     double acc[3] = {LinX, LinY, LinZ};
     QxV(Imu->qbs, acc, Imu->acc);
     Imu->valid = 1;
+}
 
-  }
-
-  void Generic_ADCS_ingest_generic_rw(double RW0, double RW1, double RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
-  {
-    double H_in_body[3] = {0.0, 0.0, 0.0};
+void Generic_ADCS_ingest_generic_rw(double RW0, double RW1, double RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw)
+{
+    double H_in_body[3]   = {0.0, 0.0, 0.0};
     double rwMomentums[3] = {RW0, RW1, RW2};
 
-    for(int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
-      Rw->HwhlB[i] = 0.0;
-    }
-    
-    for(int whl = 0; whl < 3; whl++)
-    {
-      SxV(rwMomentums[whl], Rw->whl_axis[whl], H_in_body);
-
-      for(int i = 0; i < 3; i++)
-      {
-        Rw->HwhlB[i] += H_in_body[i];
-      }
+        Rw->HwhlB[i] = 0.0;
     }
 
-  }
+    for (int whl = 0; whl < 3; whl++)
+    {
+        SxV(rwMomentums[whl], Rw->whl_axis[whl], H_in_body);
 
-  void Generic_ADCS_ingest_generic_st(double Q0, double Q1, double Q2, double Q3, __uint8_t IsValid, Generic_ADCS_DI_St_Tlm_Payload_t *St)
-  {
-    St->valid = IsValid;
+        for (int i = 0; i < 3; i++)
+        {
+            Rw->HwhlB[i] += H_in_body[i];
+        }
+    }
+}
+
+void Generic_ADCS_ingest_generic_st(double Q0, double Q1, double Q2, double Q3, __uint8_t IsValid,
+                                    Generic_ADCS_DI_St_Tlm_Payload_t *St)
+{
+    St->valid   = IsValid;
     double q[4] = {Q0, Q1, Q2, Q3};
     QxQ(q, St->qbs, St->q);
-
-  }
+}
