@@ -54,7 +54,7 @@ typedef struct
 {
     CFE_MSG_CommandHeader_t CmdHeader;
     double                  qbn[4];
-} Generic_ADCS_Quat_cmd_t;
+} __attribute__((packed)) Generic_ADCS_Quat_cmd_t;
 
 /*
 ** Generic_ADCS housekeeping type definition
