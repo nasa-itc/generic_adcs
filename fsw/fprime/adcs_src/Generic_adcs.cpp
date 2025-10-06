@@ -6,6 +6,7 @@
 
 #include "adcs_src/Generic_adcs.hpp"
 #include "FpConfig.hpp"
+#include <Fw/Log/LogString.hpp>
 
 #include <math.h>
 
@@ -87,24 +88,29 @@ namespace Components {
 
     switch (MODE.e)
     {
-        case BDOT_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to BDOT Mode!");
+        case BDOT_MODE:{
+            Fw::LogStringArg log_msg("Set to BDOT Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             this->RWOUTout_out(0, 0, 0, 0); // turn off RW
             break;
-
-        case SUNSAFE_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to SUNSAFE Mode!");
+        }
+        case SUNSAFE_MODE:{
+            Fw::LogStringArg log_msg("Set to SUNSAFE Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             break;
-
-        case INERTIAL_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to Inertial Mode!");
+        }
+        case INERTIAL_MODE:{
+            Fw::LogStringArg log_msg("Set to Inertial Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             break;
-
-        case PASSIVE_MODE:
+        }
+        case PASSIVE_MODE:{
         default:
-            this->log_ACTIVITY_HI_TELEM("Set to PASSIVE Mode!");
+            Fw::LogStringArg log_msg("Set to PASSIVE Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             this->RWOUTout_out(0, 0, 0, 0); // turn off RW
             break;
+        }
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -124,7 +130,8 @@ namespace Components {
 
         char quatMsg[50];
         sprintf(quatMsg, "Set inertial quat to (%.3lf,%.3lf,%.3lf,%.3lf)", QW, QX, QY, QZ);
-        this->log_ACTIVITY_HI_TELEM(quatMsg);
+        Fw::LogStringArg log_msg(quatMsg);
+        this->log_ACTIVITY_HI_TELEM(log_msg);
 
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 
@@ -134,7 +141,8 @@ namespace Components {
   {
     HkTelemetryPkt.CommandCount++;
 
-    this->log_ACTIVITY_HI_TELEM("NOOP SENT");
+    Fw::LogStringArg log_msg("NOOP SENT");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
     this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
     this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
@@ -148,7 +156,8 @@ namespace Components {
     HkTelemetryPkt.CommandCount = 0;
     HkTelemetryPkt.CommandErrorCount = 0;
 
-    this->log_ACTIVITY_HI_TELEM("Reset Counters command successful!");
+    Fw::LogStringArg log_msg("Reset Counters command successful!");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
     this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -162,7 +171,8 @@ namespace Components {
     this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
     this->tlmWrite_ADCSMomentumManagement(get_adcs_mgmt_state(GNCPacket.Payload.HmgmtOn));
 
-    this->log_ACTIVITY_HI_TELEM("Requested Housekeeping successfully!");
+    Fw::LogStringArg log_msg("Requested Housekeeping successfully!");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
   }
 
@@ -173,11 +183,13 @@ namespace Components {
     this->tlmWrite_ADCSMomentumManagement(STATE);
 
     if(STATE.e){
-      this->log_ACTIVITY_HI_TELEM("Momentum Management ON!");
+      Fw::LogStringArg log_msg("Momentum Management ON!");
+      this->log_ACTIVITY_HI_TELEM(log_msg);
     }
     else
     {
-      this->log_ACTIVITY_HI_TELEM("Momentum Management OFF!");
+      Fw::LogStringArg log_msg("Momentum Management OFF!");
+      this->log_ACTIVITY_HI_TELEM(log_msg);
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
