@@ -76,7 +76,7 @@ namespace Components {
       //! Destroy Generic_adcs object
       ~Generic_adcs();
 
-    PRIVATE:
+    private:
 
       void IMUin_handler(
         NATIVE_INT_TYPE portNum,

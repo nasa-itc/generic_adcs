@@ -5,7 +5,8 @@
 // ======================================================================
 
 #include "adcs_src/Generic_adcs.hpp"
-#include "FpConfig.hpp"
+// #include "FpConfig.hpp"
+#include "Fw/FPrimeBasicTypes.hpp"
 #include <Fw/Log/LogString.hpp>
 
 #include <math.h>
