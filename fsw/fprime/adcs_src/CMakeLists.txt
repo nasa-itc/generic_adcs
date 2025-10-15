@@ -34,3 +34,9 @@ target_sources(${FPRIME_CURRENT_MODULE} PRIVATE
   "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_ingest.c"
   "${CMAKE_CURRENT_LIST_DIR}/../../shared/generic_adcs_adac.c"
 )
+target_include_directories(${FPRIME_CURRENT_MODULE} PRIVATE
+  "${CMAKE_CURRENT_LIST_DIR}/../../shared/"
+  "${CMAKE_CURRENT_LIST_DIR}/../../shared/"
+  "${CMAKE_CURRENT_LIST_DIR}/../src/"
+  "${CMAKE_CURRENT_LIST_DIR}/../src/"
+)
