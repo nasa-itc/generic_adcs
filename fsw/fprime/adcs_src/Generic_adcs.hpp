@@ -13,10 +13,10 @@
 
 
 extern "C"{
-  #include "../../shared/generic_adcs_utilities.h"
-  #include "../src/generic_adcs_msg.h"
-  #include "../src/generic_adcs_ingest.h"
-  #include "../../shared/generic_adcs_adac.h"
+  #include "generic_adcs_utilities.h"
+  #include "generic_adcs_msg.h"
+  #include "generic_adcs_ingest.h"
+  #include "generic_adcs_adac.h"
 }
 
 #define NANO 10e-9

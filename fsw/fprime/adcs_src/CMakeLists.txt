@@ -7,9 +7,9 @@
 #
 ####
 
-include_directories("../../../../../fsw/apps/hwlib/fsw/public_inc")
-include_directories("../src")
-include_directories("../../shared")
+# include_directories("../../../../../fsw/apps/hwlib/fsw/public_inc")
+# include_directories("../src")
+# include_directories("../../shared")
 
 set(SOURCE_FILES
   "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.fpp"
@@ -29,14 +29,24 @@ set(MOD_DEPS
 )
 
 register_fprime_module()
+
+# register_fprime_module(
+#     SOURCES
+#         "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.cpp"
+#     AUTOCODER_INPUTS
+#         "${CMAKE_CURRENT_LIST_DIR}/Generic_adcs.fpp"
+#     DEPENDS
+#         Fw_Types
+#         ${ITC_Common_LIBRARIES}
+#         ${NOSENGINE_LIBRARIES}
+# )
 target_sources(${FPRIME_CURRENT_MODULE} PRIVATE 
   "${CMAKE_CURRENT_LIST_DIR}/../../shared/generic_adcs_utilities.c"
   "${CMAKE_CURRENT_LIST_DIR}/../src/generic_adcs_ingest.c"
   "${CMAKE_CURRENT_LIST_DIR}/../../shared/generic_adcs_adac.c"
 )
-target_include_directories(${FPRIME_CURRENT_MODULE} PRIVATE
-  "${CMAKE_CURRENT_LIST_DIR}/../../shared/"
-  "${CMAKE_CURRENT_LIST_DIR}/../../shared/"
-  "${CMAKE_CURRENT_LIST_DIR}/../src/"
-  "${CMAKE_CURRENT_LIST_DIR}/../src/"
+target_include_directories(${FPRIME_CURRENT_MODULE} PUBLIC
+  "../../../../../fsw/apps/hwlib/fsw/public_inc"
+  "../../shared"
+  "../src/"
 )
