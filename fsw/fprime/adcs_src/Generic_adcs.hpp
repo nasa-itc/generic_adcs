@@ -76,10 +76,10 @@ namespace Components {
       //! Destroy Generic_adcs object
       ~Generic_adcs();
 
-    PRIVATE:
+    private:
 
       void IMUin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         F32 XLin,
         F32 YLin,
         F32 ZLin,
@@ -89,21 +89,21 @@ namespace Components {
       ) override;
 
       void MAGin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         I32 MagX,
         I32 MagY,
         I32 MagZ
       ) override;
 
       void FSSin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         F32 Alpha,
         F32 Beta,
         U8 Error
       ) override;
 
       void CSSin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         U16 ADCV0,
         U16 ADCV1,
         U16 ADCV2,
@@ -113,14 +113,14 @@ namespace Components {
       ) override;
 
       void RWin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         F64 RW0,
         F64 RW1,
         F64 RW2
       ) override;
 
       void STin_handler(
-        NATIVE_INT_TYPE portNum,
+        FwIndexType portNum,
         F64 Q0,
         F64 Q1,
         F64 Q2,
@@ -129,8 +129,8 @@ namespace Components {
       ) override;
 
       void updateData_handler(
-        const NATIVE_INT_TYPE portNum,
-        NATIVE_UINT_TYPE context
+        const FwIndexType portNum,
+        U32 context
       ) override;
 
       void SET_MODE_cmdHandler(

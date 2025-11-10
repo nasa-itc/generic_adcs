@@ -5,7 +5,9 @@
 // ======================================================================
 
 #include "adcs_src/Generic_adcs.hpp"
-#include "FpConfig.hpp"
+// #include "FpConfig.hpp"
+#include "Fw/FPrimeBasicTypes.hpp"
+#include <Fw/Log/LogString.hpp>
 
 #include <math.h>
 
@@ -37,43 +39,43 @@ namespace Components {
   // Handler implementations for commands
   // ----------------------------------------------------------------------
 
-  void Generic_adcs :: IMUin_handler(NATIVE_INT_TYPE portNum, F32 XLin, F32 YLin, F32 ZLin, F32 XAng, F32 YAng, F32 ZAng)
+  void Generic_adcs :: IMUin_handler(FwIndexType portNum, F32 XLin, F32 YLin, F32 ZLin, F32 XAng, F32 YAng, F32 ZAng)
   {
     Generic_ADCS_ingest_generic_imu(XLin, YLin, ZLin, XAng, YAng, ZAng, &DIPacket.Payload.Imu);
     // this->tlmWrite_ingestIMUCount(++ingestIMUCount);
   }
 
-  void Generic_adcs :: MAGin_handler( NATIVE_INT_TYPE portNum, I32 MagX, I32 MagY, I32 MagZ)
+  void Generic_adcs :: MAGin_handler( FwIndexType portNum, I32 MagX, I32 MagY, I32 MagZ)
   {
     Generic_ADCS_ingest_generic_mag(MagX, MagY, MagZ, &DIPacket.Payload.Mag);
     // this->tlmWrite_ingestMagCount(++ingestMagCount);
   }
 
-  void Generic_adcs :: FSSin_handler( NATIVE_INT_TYPE portNum, F32 Alpha, F32 Beta, U8 Error)
+  void Generic_adcs :: FSSin_handler( FwIndexType portNum, F32 Alpha, F32 Beta, U8 Error)
   {
     Generic_ADCS_ingest_generic_fss(Alpha, Beta, Error, &DIPacket.Payload.Fss);
     // this->tlmWrite_ingestFSSCount(++ingestFSSCount);
   }
 
-  void Generic_adcs :: CSSin_handler( NATIVE_INT_TYPE portNum, U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5)
+  void Generic_adcs :: CSSin_handler( FwIndexType portNum, U16 ADCV0, U16 ADCV1, U16 ADCV2, U16 ADCV3, U16 ADCV4, U16 ADCV5)
   {
     Generic_ADCS_ingest_generic_css(ADCV0, ADCV1, ADCV2, ADCV3, ADCV4, ADCV5, &DIPacket.Payload.Css);
     // this->tlmWrite_ingestCSSCount(++ingestCSSCount);
   }
 
-  void Generic_adcs :: RWin_handler( NATIVE_INT_TYPE portNum, F64 RW0, F64 RW1, F64 RW2)
+  void Generic_adcs :: RWin_handler( FwIndexType portNum, F64 RW0, F64 RW1, F64 RW2)
   {
     Generic_ADCS_ingest_generic_rw(RW0, RW1, RW2, &DIPacket.Payload.Rw);
     // this->tlmWrite_ingestRWCount(++ingestRWCount);
   }
 
-  void Generic_adcs :: STin_handler( NATIVE_INT_TYPE portNum, F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid)
+  void Generic_adcs :: STin_handler( FwIndexType portNum, F64 Q0, F64 Q1, F64 Q2, F64 Q3, U8 IsValid)
   {
     Generic_ADCS_ingest_generic_st(Q0, Q1, Q2, Q3, IsValid, &DIPacket.Payload.St);
     // this->tlmWrite_ingestSTCount(++ingestSTCount);
   }
 
-  void Generic_adcs :: updateData_handler(const NATIVE_INT_TYPE portNum, NATIVE_UINT_TYPE context)
+  void Generic_adcs :: updateData_handler(const FwIndexType portNum, U32 context)
   {
     Generic_ADCS_execute_attitude_determination_and_attitude_control(&DIPacket.Payload, &ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
     output_actuators(&GNCPacket.Payload, &DOPacket.Payload, &MtbPctOnCmd, &RwCmd);
@@ -87,24 +89,29 @@ namespace Components {
 
     switch (MODE.e)
     {
-        case BDOT_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to BDOT Mode!");
+        case BDOT_MODE:{
+            Fw::LogStringArg log_msg("Set to BDOT Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             this->RWOUTout_out(0, 0, 0, 0); // turn off RW
             break;
-
-        case SUNSAFE_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to SUNSAFE Mode!");
+        }
+        case SUNSAFE_MODE:{
+            Fw::LogStringArg log_msg("Set to SUNSAFE Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             break;
-
-        case INERTIAL_MODE:
-            this->log_ACTIVITY_HI_TELEM("Set to Inertial Mode!");
+        }
+        case INERTIAL_MODE:{
+            Fw::LogStringArg log_msg("Set to Inertial Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             break;
-
-        case PASSIVE_MODE:
+        }
+        case PASSIVE_MODE:{
         default:
-            this->log_ACTIVITY_HI_TELEM("Set to PASSIVE Mode!");
+            Fw::LogStringArg log_msg("Set to PASSIVE Mode!");
+            this->log_ACTIVITY_HI_TELEM(log_msg);
             this->RWOUTout_out(0, 0, 0, 0); // turn off RW
             break;
+        }
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -124,7 +131,8 @@ namespace Components {
 
         char quatMsg[50];
         sprintf(quatMsg, "Set inertial quat to (%.3lf,%.3lf,%.3lf,%.3lf)", QW, QX, QY, QZ);
-        this->log_ACTIVITY_HI_TELEM(quatMsg);
+        Fw::LogStringArg log_msg(quatMsg);
+        this->log_ACTIVITY_HI_TELEM(log_msg);
 
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 
@@ -134,7 +142,8 @@ namespace Components {
   {
     HkTelemetryPkt.CommandCount++;
 
-    this->log_ACTIVITY_HI_TELEM("NOOP SENT");
+    Fw::LogStringArg log_msg("NOOP SENT");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
     this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
     this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
@@ -148,7 +157,8 @@ namespace Components {
     HkTelemetryPkt.CommandCount = 0;
     HkTelemetryPkt.CommandErrorCount = 0;
 
-    this->log_ACTIVITY_HI_TELEM("Reset Counters command successful!");
+    Fw::LogStringArg log_msg("Reset Counters command successful!");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->tlmWrite_CommandCount(HkTelemetryPkt.CommandCount);
     this->tlmWrite_CommandErrorCount(HkTelemetryPkt.CommandErrorCount);
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
@@ -162,7 +172,8 @@ namespace Components {
     this->tlmWrite_ADCSMode(get_adcs_mode(GNCPacket.Payload.Mode));
     this->tlmWrite_ADCSMomentumManagement(get_adcs_mgmt_state(GNCPacket.Payload.HmgmtOn));
 
-    this->log_ACTIVITY_HI_TELEM("Requested Housekeeping successfully!");
+    Fw::LogStringArg log_msg("Requested Housekeeping successfully!");
+    this->log_ACTIVITY_HI_TELEM(log_msg);
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
   }
 
@@ -173,11 +184,13 @@ namespace Components {
     this->tlmWrite_ADCSMomentumManagement(STATE);
 
     if(STATE.e){
-      this->log_ACTIVITY_HI_TELEM("Momentum Management ON!");
+      Fw::LogStringArg log_msg("Momentum Management ON!");
+      this->log_ACTIVITY_HI_TELEM(log_msg);
     }
     else
     {
-      this->log_ACTIVITY_HI_TELEM("Momentum Management OFF!");
+      Fw::LogStringArg log_msg("Momentum Management OFF!");
+      this->log_ACTIVITY_HI_TELEM(log_msg);
     }
 
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
