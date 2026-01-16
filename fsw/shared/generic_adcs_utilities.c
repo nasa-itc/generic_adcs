@@ -30,7 +30,7 @@ double MAGV(double v[3])
 
 /**********************************************************************/
 /*  Quaternion product                                                */
-void QxQ(double A[4], double B[4], double C[4])
+void QxQ(const double A[4], const double B[4], double C[4])
 {
     C[0] = A[3] * B[0] + A[2] * B[1] - A[1] * B[2] + A[0] * B[3];
     C[1] = -A[2] * B[0] + A[3] * B[1] + A[0] * B[2] + A[1] * B[3];
@@ -40,7 +40,7 @@ void QxQ(double A[4], double B[4], double C[4])
 
 /**********************************************************************/
 /* Product of a Quaternion (A) with the Complement of a Quaternion (B)*/
-void QxQT(double A[4], double B[4], double C[4])
+void QxQT(const double A[4], const double B[4], double C[4])
 {
     C[0] = -A[3] * B[0] - A[2] * B[1] + A[1] * B[2] + A[0] * B[3];
     C[1] = A[2] * B[0] - A[3] * B[1] - A[0] * B[2] + A[1] * B[3];
@@ -50,7 +50,7 @@ void QxQT(double A[4], double B[4], double C[4])
 
 /**********************************************************************/
 /* Find components of V in A, given components of V in B, and qab     */
-void QxV(double QAB[4], double Vb[3], double Va[3])
+void QxV(const double QAB[4], const double Vb[3], double Va[3])
 {
     double qq[4][4];
     long   i, j;
@@ -70,7 +70,7 @@ void QxV(double QAB[4], double Vb[3], double Va[3])
 }
 /**********************************************************************/
 /* Find components of V in B, given components of V in A, and qab     */
-void QTxV(double QAB[4], double Va[3], double Vb[3])
+void QTxV(const double QAB[4], const double Va[3], double Vb[3])
 {
     double qq[4][4];
     long   i, j;
