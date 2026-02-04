@@ -14,7 +14,7 @@ require 'gps_lib.rb'
 #
 GENERIC_ADCS_CMD_SLEEP = 0.25
 GENERIC_ADCS_RESPONSE_TIMEOUT = 5
-GENERIC_ADCS_MODE_CHECK_TIMEOUT = 60;
+GENERIC_ADCS_MODE_CHECK_TIMEOUT = 360;
 GENERIC_ADCS_TEST_LOOP_COUNT = 1
 GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
 
@@ -92,11 +92,11 @@ end
 
 def adcs_set_q()
 
-    cmd("GENERIC_ADCS GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0, GNC_INER_QUAT2 0.0, GNC_INER_QUAT3 0.0, GNC_INER_QUAT4 1.0")
+    cmd("GENERIC_ADCS GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0640, GNC_INER_QUAT2 0.6434, GNC_INER_QUAT3 -0.7053, GNC_INER_QUAT4 0.2906")
 
 end
 
-def safe_adcs()
+def enable_adcs()
 
     cmd("GENERIC_FSS GENERIC_FSS_REQ_HK")
     fss_enabled = tlm("GENERIC_FSS GENERIC_FSS_HK_TLM DEVICE_ENABLED")
@@ -144,12 +144,6 @@ def safe_adcs()
     if (torquer_enabled != "ENABLED")
         cmd("GENERIC_TORQUER GENERIC_TORQUER_ENABLE_CC")
     end
-
-    get_adcs_data()
-    mode = tlm("GENERIC_ADCS GENERIC_ADCS_GNC MODE")
-    if (mode != "SUNSAFE")
-        adcs_sunsafe()
-    end
 end
 
 def confirm_adcs_data()
@@ -160,14 +154,12 @@ def confirm_adcs_data()
 
     get_adcs_data()
     adcs_sun_valid = tlm("GENERIC_ADCS GENERIC_ADCS_GNC SUN_VALID")
-    if adcs_sun_valid == 0
-        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_X", 1.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Y", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Z", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_X", 1.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Y", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Z", 0.0, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
-        diff = 50
-        wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC CSS_0", 1000, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    end
+    diff = 50
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC CSS_0", 1000, diff, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     cmd("GENERIC_IMU GENERIC_IMU_REQ_DATA")
 
@@ -188,15 +180,15 @@ def confirm_adcs_data()
 
     sleep(GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
-    qbn0 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0").abs
-    qbn1 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1").abs
-    qbn2 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2").abs
-    qbn3 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3").abs
+    qbn0 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0")
+    qbn1 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1")
+    qbn2 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2")
+    qbn3 = tlm("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3")
 
-    wait_check_expression("#{qbn0} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn1} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn2} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression("#{qbn3} > 0.9", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn0 - 0.0640}.abs < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn1 - 0.6434}.abs < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn2 + 0.7053}.abs < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_expression("#{qbn3 - 0.2906}.abs < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 
     get_adcs_hk()
 end
@@ -517,4 +509,33 @@ def confirm_adcs_data_loop()
     GENERIC_ADCS_DEVICE_LOOP_COUNT.times do |n|
         confirm_adcs_data()
     end
+end
+
+def goto_sunsafe
+# Go to sunsafe mode
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE SUNSAFE_MODE")
+    adcs_sun_valid = tlm("GENERIC_ADCS GENERIC_ADCS_GNC SUN_VALID")
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_X", 1.0, 0.01, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Y", 0.0, 0.07, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC SVB_Z", 0.0, 0.07, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+end
+
+def goto_startracker_not_at_earth
+    # Change orientation so the star tracker is not pointed at the earth
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE PASSIVE")
+    15.times do
+        cmd("GENERIC_REACTION_WHEEL GENERIC_RW_SET_TORQUE_CC with WHEEL_NUMBER 1, TORQUE -50")    
+        wait(5)
+    end
+end
+
+def goto_inertial
+    # Go to inertial mode; the quaternion was determined empirically by observing when the star tracker was valid
+    wait(5)
+    cmd("GENERIC_ADCS GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.2144, GNC_INER_QUAT2 0.7770, GNC_INER_QUAT3 -0.5431, GNC_INER_QUAT4 0.2351")
+    cmd("GENERIC_ADCS GENERIC_ADCS_SET_MODE_CC with GNC_MODE INERTIAL_MODE")
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_0", 0.2144, 0.005, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_1", 0.7770, 0.005, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_2",-0.5431, 0.005, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    wait_check_tolerance("GENERIC_ADCS GENERIC_ADCS_GNC QBN_3", 0.2351, 0.005, GENERIC_ADCS_MODE_CHECK_TIMEOUT)
 end

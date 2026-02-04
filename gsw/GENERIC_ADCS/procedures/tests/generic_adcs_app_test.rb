@@ -12,7 +12,7 @@ require "generic_adcs_lib.rb"
 ##
 
 # Get to known state
-safe_adcs()
+enable_adcs()
 
 ##
 ##   Housekeeping, request telemetry to be published on the software bus
@@ -67,7 +67,7 @@ end
 
 GENERIC_ADCS_TEST_LOOP_COUNT.times do |n|
     #test data makes sense against truth
-    safe_adcs()
+    enable_adcs()
     
     get_adcs_data()
 
