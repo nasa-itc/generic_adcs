@@ -143,6 +143,7 @@ typedef struct
 typedef struct
 {
     double bvb[3];
+    uint8  MagValid;
 } __attribute__((packed)) Generic_ADCS_AD_Mag_Tlm_Payload_t;
 
 typedef struct
@@ -168,12 +169,27 @@ typedef struct
     double qbn[4]; /* [-] quaternion expressed in body frame */
 } __attribute__((packed)) Generic_ADCS_AD_ST_Tlm_Payload_t;
 
+typedef struct 
+{
+   int Valid;
+   int enable_filter;    /*Flag to enable/disable Moving Average filter*/
+   int SolInit;
+   int MagInit;
+   double wbn[3];
+   double ws[3];   /*(rad/s) Estimated angular rate from Sun Vector*/
+   double wm[3];    /*(rad/s) Estimated angular rate from Mag Vector*/
+   double svb_prev[3];  /*sol.svb at prevous time*/
+   double bvb_prev[3];  /*mag.bvb unit at last time step*/
+   long sample_size;    /*Number of sample used in moving average filter*/
+} __attribute__((packed)) Generic_AD_rateEst_Tlm_Payload_t;
+
 typedef struct
 {
     Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
     Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
+    Generic_AD_rateEst_Tlm_Payload_t  RateEst;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct

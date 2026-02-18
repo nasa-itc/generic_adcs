@@ -17,6 +17,10 @@ static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
                    Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
 static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_Mag);
+static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t  GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, 
+                       Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD);
+static void calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD );
+static void calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD );
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
@@ -74,6 +78,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     AD_mag(&DI->Mag, &AD->Mag);
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
     AD_st(&DI->St, &AD->ST);
+    AD_rateEst(*GNC, AD->Mag, AD->Sol, &AD->RateEst);
 
     AD_to_GNC(AD, GNC);
     for (int i = 0; i < 3; i++)
@@ -203,6 +208,194 @@ static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD
     {
         st->Valid = false;
     }
+}
+
+static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t  GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD)
+{
+   int i;
+   static long valid_counter = 0;
+   static double w_array[100][3] = {{0}};
+   double sum_wx = 0.0;
+   double sum_wy = 0.0;
+   double sum_wz = 0.0;
+
+   AD->Valid = false;
+
+   for (i = 0; i < 3; i++)
+   {
+      AD->wbn[i] = 0.0;
+   }
+
+   if (sol.FssValid || mag.MagValid)
+   {
+      if (sol.FssValid && mag.MagValid)
+      {
+         if (AD->MagInit || AD->SolInit)
+         {
+            if (AD->MagInit && AD->SolInit)
+            {
+               calc_wmag(GNC.DT, mag, AD);
+               calc_wsol(GNC.DT, sol, AD);
+               for(i = 0; i < 3; i++) AD->wbn[i] = AD->ws[i] + VoV(AD->wm,sol.svb)*sol.svb[i];
+               AD->Valid = true;
+            }
+            else
+            {
+               if (AD->MagInit)
+               {
+                  AD->SolInit = true;
+                  calc_wmag(GNC.DT, mag, AD);
+                  for(i = 0; i < 3; i++) AD->wbn[i] = AD->wm[i];
+                  AD->Valid = true;
+
+               }
+               else      /*sol is already intitialzied*/
+               {
+                  AD->MagInit = true;
+                  calc_wsol(GNC.DT, sol, AD);
+                  for(i = 0; i < 3; i++) AD->wbn[i] = AD->ws[i];
+                  AD->Valid = true;
+
+               }
+            }
+         }
+         else
+         {
+            AD->SolInit = true;
+            AD->MagInit = true;
+         }
+      }
+      else
+      {
+         if (sol.FssValid)
+         {
+            AD->MagInit = false;
+            if (AD->SolInit)
+            {
+               calc_wsol(GNC.DT, sol, AD);
+               for(i = 0; i < 3; i++) AD->wbn[i] = AD->ws[i];
+               AD->Valid = true;
+            }
+            else
+            {
+               AD->SolInit = true;
+            }
+         }
+         else    /*Mag has to be valid*/
+         {
+            AD->SolInit = false;
+            if (AD->MagInit)
+            {
+               calc_wmag(GNC.DT, mag, AD);
+               for(i = 0; i < 3; i++) AD->wbn[i] = AD->wm[i];
+               AD->Valid = true;
+            }
+            else
+            {
+               AD->MagInit = true;
+            }
+         }
+      }
+   }
+   else
+   {
+      AD->MagInit = false;
+      AD->SolInit = false;
+   }
+
+   /*Moving average filter applied*/
+   if (AD->enable_filter && AD->Valid)
+   {
+
+      if (valid_counter < AD->sample_size)
+      {
+         w_array[valid_counter][0] = AD->wbn[0];
+         w_array[valid_counter][1] = AD->wbn[1];
+         w_array[valid_counter][2] = AD->wbn[2];
+      }
+      else
+      {
+         for(i = 0; i < AD->sample_size-1; i++)
+         {
+            w_array[i][0] = w_array[i+1][0];
+            w_array[i][1] = w_array[i+1][1];
+            w_array[i][2] = w_array[i+1][2];
+         }
+         w_array[AD->sample_size-1][0] = AD->wbn[0];
+         w_array[AD->sample_size-1][1] = AD->wbn[1];
+         w_array[AD->sample_size-1][2] = AD->wbn[2];
+
+         for(i = 0; i < AD->sample_size; i++)
+         {
+            sum_wx = sum_wx + w_array[i][0];
+            sum_wy = sum_wy + w_array[i][1];
+            sum_wz = sum_wz + w_array[i][2];
+         }
+         AD->wbn[0] = sum_wx/AD->sample_size;
+         AD->wbn[1] = sum_wy/AD->sample_size;
+         AD->wbn[2] = sum_wz/AD->sample_size;
+      }
+
+      valid_counter = valid_counter + 1;
+   }
+   else
+   {
+      valid_counter = 0.0;
+   }
+
+
+   /*Update previous states*/
+   for (i = 0; i < 3; i++)
+   {
+      AD->svb_prev[i] = sol.svb[i];
+      AD->bvb_prev[i] = mag.bvb[i];
+   }
+}
+
+static void calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD )
+{
+
+   double bvb[3] = {0}, bvb_prev[3] = {0}, ang = 0.0, axis[3] = {0}, rate = 0.0;
+
+   int i;
+   for (i = 0; i < 3; i++)
+   {
+      bvb[i] = mag.bvb[i];
+      bvb_prev[i] = AD->bvb_prev[i];
+   }
+   UNITV(bvb);
+   UNITV(bvb_prev);
+   ang = arccos(VoV(bvb, bvb_prev));
+   VxV(bvb, bvb_prev, axis);
+   if (MAGV(axis) > 1.0e-10)
+   {
+      UNITV(axis);
+   }
+   rate = ang / dt;
+   for (i = 0; i < 3; i++)
+   {
+      AD->wm[i] = rate * axis[i];
+   }
+
+}
+
+static void calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD )
+{
+
+   int i;
+   double ang = 0.0, axis[3] = {0}, rate = 0.0;
+   ang = arccos(VoV(sol.svb, AD->svb_prev));
+   VxV(sol.svb, AD->svb_prev, axis);
+   if (MAGV(axis) > 1.0e-10)
+   {
+      UNITV(axis);
+   }
+   rate = ang / dt;
+   for (i = 0; i < 3; i++)
+   {
+      AD->ws[i] = rate * axis[i];
+   }
+
 }
 
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC)
