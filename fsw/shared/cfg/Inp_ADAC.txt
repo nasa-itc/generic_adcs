@@ -1,5 +1,7 @@
 !!!!!!!!!!!!!!! AD  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.0                                       ! Filter coefficient for IMU wbn data
+1                                         ! enable_filter - 1 = apply moving average filter, 0 = do not apply moving average filter)
+40                                        ! sample_size - Number of Samples to be used in moving average filter (MAX = 100)
 !!!!!!!!!!!!!!! GNC !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.1                                       ! DT (seconds)
 1.42                                      ! Magtorquer saturation (A-m^2)

@@ -37,6 +37,18 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &AD->Imu.alpha, junk, &newline);
     AD->Imu.init = 0;
+    fscanf(in, "%hhu%[^\n]%[\n]", &AD->RateEst.enable_filter, junk, &newline);
+    fscanf(in, "%d%[^\n]%[\n]", &AD->RateEst.sample_size, junk, &newline);
+    AD->RateEst.Valid = false;
+    AD->RateEst.MagInit = false;
+    AD->RateEst.SolInit = false;
+    for (int i = 0; i < 3; i++) {
+        AD->RateEst.wbn[i] = 0.0;
+        AD->RateEst.ws[i] = 0.0;
+        AD->RateEst.wm[i] = 0.0;
+        AD->RateEst.svb_prev[i] = 0.0;
+        AD->RateEst.bvb_prev[i] = 0.0;
+    }
     // GNC
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &GNC->DT, junk, &newline);
