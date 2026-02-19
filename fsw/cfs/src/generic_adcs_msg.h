@@ -171,16 +171,16 @@ typedef struct
 
 typedef struct 
 {
-   int Valid;
-   int enable_filter;    /*Flag to enable/disable Moving Average filter*/
-   int SolInit;
-   int MagInit;
+   uint8 Valid;
+   uint8 enable_filter;    /*Flag to enable/disable Moving Average filter*/
+   uint8 SolInit;
+   uint8 MagInit;
    double wbn[3];
    double ws[3];   /*(rad/s) Estimated angular rate from Sun Vector*/
    double wm[3];    /*(rad/s) Estimated angular rate from Mag Vector*/
    double svb_prev[3];  /*sol.svb at prevous time*/
    double bvb_prev[3];  /*mag.bvb unit at last time step*/
-   long sample_size;    /*Number of sample used in moving average filter*/
+   int32  sample_size;    /*Number of samples used in moving average filter*/
 } __attribute__((packed)) Generic_AD_rateEst_Tlm_Payload_t;
 
 typedef struct
