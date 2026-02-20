@@ -186,6 +186,22 @@ typedef struct
     double qbn[4]; /* [-] quaternion expressed in body frame */
 } __attribute__((packed)) Generic_ADCS_AD_ST_Tlm_Payload_t;
 
+typedef struct
+{
+    uint16_t Weeks;
+    uint32_t SecondsIntoWeek;
+    double   Fractions;
+    double   ECEFX;
+    double   ECEFY;
+    double   ECEFZ;
+    double   VelX;
+    double   VelY;
+    double   VelZ;
+    float    lat;
+    float    lon;
+    float    alt;
+} __attribute__((packed)) Generic_ADCS_AD_Gps_Tlm_Payload_t;
+
 typedef struct 
 {
    uint8 Valid;
@@ -206,6 +222,7 @@ typedef struct
     Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
     Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
     Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
+    Generic_ADCS_AD_Gps_Tlm_Payload_t Gps;
     Generic_AD_rateEst_Tlm_Payload_t  RateEst;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
 

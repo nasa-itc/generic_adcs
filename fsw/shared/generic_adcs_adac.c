@@ -17,6 +17,7 @@ static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
                    Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
 static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_Mag);
+static void AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_AD_Gps_Tlm_Payload_t *gps);
 static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t  GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, 
                        Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD);
 static void calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD );
@@ -88,8 +89,9 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
 {
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
-    AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
     AD_st(&DI->St, &AD->ST);
+    AD_gps(&DI->Gps, &AD->Gps);
+    AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
     AD_rateEst(*GNC, AD->Mag, AD->Sol, &AD->RateEst);
 
     AD_to_GNC(AD, GNC);
@@ -220,6 +222,22 @@ static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD
     {
         st->Valid = false;
     }
+}
+
+static void AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_AD_Gps_Tlm_Payload_t *gps)
+{
+    gps->Weeks = DI_GPS->Weeks;
+    gps->SecondsIntoWeek = DI_GPS->SecondsIntoWeek;
+    gps->Fractions = DI_GPS->Fractions;
+    gps->ECEFX = DI_GPS->ECEFX;
+    gps->ECEFY = DI_GPS->ECEFY;
+    gps->ECEFZ = DI_GPS->ECEFZ;
+    gps->VelX = DI_GPS->VelX;
+    gps->VelY = DI_GPS->VelY;
+    gps->VelZ = DI_GPS->VelZ;
+    gps->lat = DI_GPS->lat;
+    gps->lon = DI_GPS->lon;
+    gps->alt = DI_GPS->alt;
 }
 
 static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t  GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD)
