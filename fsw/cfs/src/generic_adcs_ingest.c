@@ -12,6 +12,7 @@
 #include "generic_imu_msg.h"
 #include "generic_reaction_wheel_msg.h"
 #include "generic_star_tracker_msg.h"
+#include "novatel_oem615_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
 
@@ -183,4 +184,22 @@ void Generic_ADCS_ingest_generic_st(CFE_MSG_Message_t *Msg, Generic_ADCS_DI_St_T
     double q[4] = {st->Generic_star_tracker.Q0, st->Generic_star_tracker.Q1, st->Generic_star_tracker.Q2,
                    st->Generic_star_tracker.Q3};
     QxQ(q, St->qbs, St->q);
+}
+
+void Generic_ADCS_ingest_novatel_gps(CFE_MSG_Message_t *Msg, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps)
+{
+    NOVATEL_OEM615_Device_tlm_t *gps = (NOVATEL_OEM615_Device_tlm_t *)Msg;
+
+    Gps->Weeks = gps->Novatel_oem615.Weeks;
+    Gps->SecondsIntoWeek = gps->Novatel_oem615.SecondsIntoWeek;
+    Gps->Fractions = gps->Novatel_oem615.Fractions;
+    Gps->ECEFX = gps->Novatel_oem615.ECEFX;
+    Gps->ECEFY = gps->Novatel_oem615.ECEFY;
+    Gps->ECEFZ = gps->Novatel_oem615.ECEFZ;
+    Gps->VelX = gps->Novatel_oem615.VelX;
+    Gps->VelY = gps->Novatel_oem615.VelY;
+    Gps->VelZ = gps->Novatel_oem615.VelZ;
+    Gps->lat = gps->Novatel_oem615.lat;
+    Gps->lon = gps->Novatel_oem615.lon;
+    Gps->alt = gps->Novatel_oem615.alt;
 }

@@ -122,12 +122,29 @@ typedef struct
 
 typedef struct
 {
+    uint16_t Weeks;
+    uint32_t SecondsIntoWeek;
+    double   Fractions;
+    double   ECEFX;
+    double   ECEFY;
+    double   ECEFZ;
+    double   VelX;
+    double   VelY;
+    double   VelZ;
+    float    lat;
+    float    lon;
+    float    alt;
+} __attribute__((packed)) Generic_ADCS_DI_Gps_Tlm_Payload_t;
+
+typedef struct
+{
     Generic_ADCS_DI_Mag_Tlm_Payload_t Mag;
     Generic_ADCS_DI_Fss_Tlm_Payload_t Fss;
     Generic_ADCS_DI_Css_Tlm_Payload_t Css;
     Generic_ADCS_DI_Imu_Tlm_Payload_t Imu;
     Generic_ADCS_DI_Rw_Tlm_Payload_t  Rw;
     Generic_ADCS_DI_St_Tlm_Payload_t  St;
+    Generic_ADCS_DI_Gps_Tlm_Payload_t Gps;
 } __attribute__((packed)) Generic_ADCS_DI_Tlm_Payload_t;
 
 typedef struct
