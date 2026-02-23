@@ -1,3 +1,5 @@
+!!!!!!!!!!!!!!! EPH  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+8                                         ! input for IGRF = nmax = max order/degree
 !!!!!!!!!!!!!!! AD  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.0                                       ! Filter coefficient for IMU wbn data
 1                                         ! enable_filter - 1 = apply moving average filter, 0 = do not apply moving average filter)

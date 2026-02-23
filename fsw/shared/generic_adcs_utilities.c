@@ -449,3 +449,181 @@ void QW2QDOT(double Q[4],double W[3],double QDOT[4])
       QDOT[3] = 0.5*(-W[0]*Q[0]-W[1]*Q[1]-W[2]*Q[2]);
 
 }
+
+/***********************************************************************************
+**
+** Function: MatrixMxNf_Mult
+**
+** Notes:   None
+*/
+void MatrixMxNf_Mult (float            Result[], 
+                      const float      Left[], 
+                      unsigned int      LeftRowSize,
+                      unsigned int      LeftColSize,
+                      const float      Right[],
+                      unsigned int      RightRowSize,
+                      unsigned int      RightColSize) 
+{
+   float *ResultPtr;
+   unsigned int Row, Col, Element;
+   unsigned int RightOffset, LeftOffset;
+
+   ResultPtr = Result;
+   LeftOffset = 0;
+   RightOffset = 0;
+   for (Row = 0; Row < LeftRowSize; Row++) 
+   {
+      for(Col = 0; Col < RightColSize; Col ++) 
+      {
+         RightOffset = Col;
+         *ResultPtr = 0.0;
+         for(Element = 0; Element < RightRowSize; Element++) 
+         {
+            *ResultPtr += *(Left + LeftOffset) * *(Right + RightOffset);
+            LeftOffset +=1;
+            RightOffset +=RightColSize;
+         }
+         ResultPtr++;
+         LeftOffset = 0;
+      }
+      Left += LeftColSize;
+      RightOffset = 0;
+   }
+
+} /* End MatrixMxNf_Mult */
+
+void MatrixMxNf_Copy (float            Result[], 
+                      const float      Input[], 
+                      unsigned int      RowSize,
+                      unsigned int      ColSize) 
+{
+   unsigned int     Element;
+   unsigned int     NumElements;
+
+   NumElements = RowSize * ColSize;
+   for(Element = 0; Element < NumElements; Element++) 
+   {
+      *(Result + Element) = *(Input + Element); 
+   }
+} /* End MatrixMxNf_Copy */
+
+void Matrix3x3f_MultVec (Vector3f *Result, const Matrix3x3f *Left, const Vector3f *Right) 
+{
+   Vector3f    Rslt;
+
+   MatrixMxNf_Mult(&Rslt.Comp[0], &Left->Comp[0][0],3,3,&Right->Comp[0],3,1);
+   MatrixMxNf_Copy(&Result->Comp[0],&Rslt.Comp[0], 3,1);
+ 
+
+} /* End Matrix3x3f_MultVec() */
+
+/**********************************************************************/
+/* GPS Epoch is 6 Jan 1980 00:00:00.0 which is JD = 2444244.5         */
+/* GPS Time is expressed in weeks and seconds                         */
+/* GPS Time rolls over every 1024 weeks                               */
+/* *******************************************************************/
+double GpsTime_TO_JD(long GpsRollover, long GpsWeek, double GpsSecond)
+{
+   double DaysSinceWeek = 0.0, DaysSinceRollover = 0.0, DaysSinceEpoch = 0.0, JD = 0.0;
+
+   DaysSinceWeek = GpsSecond / 86400.0;
+   DaysSinceRollover = DaysSinceWeek + 7.0 * GpsWeek;
+   DaysSinceEpoch = DaysSinceRollover + 7168.0 * GpsRollover;
+   JD = DaysSinceEpoch + 2444244.5;
+
+   return (JD);
+}
+/**********************************************************************/
+/*  Find Greenwich Mean Sidereal Time (GMST)                          */
+/*  Ref. Jean Meeus, 'Astronomical Algorithms', QB51.3.E43M42, 1991.  */
+/*  GMST is output in units of days.                                  */
+/* ********************************************************************/
+double JD_TO_GMST(double JD)
+{
+   double T = 0.0, JD0 = 0.0, GMST0 = 0.0, GMST = 0.0;
+
+   JD0 = floor(JD) + 0.5;
+
+   T = (JD0 - 2451545.0) / 36525.0;
+
+   /* .. GMST at UT=0h, in deg */
+   GMST0 = 100.46061837 + T * (36000.770053608 + T * (3.87933E-4 - T / 3.871E7));
+
+   /* .. Convert to days */
+   GMST0 /= 360.0;
+
+   GMST = GMST0 + 1.00273790935 * (JD - JD0);
+
+   GMST -= (int)(GMST);
+
+   return (GMST);
+}
+/**********************************************************************/
+/* GPS Epoch is 6 Jan 1980 00:00:00.0 UTC                             */
+/* which is 6 Jan 1980 00:00:19.0 TAI                                 */
+/* J2000 is 1 Jan 2000 12:00:00.0 TT                                  */
+/* which is 1 Jan 2000 11:59:27.816 TAI                               */
+/* so J2000-GPS epoch is 7300.5 days minus (19+32.184) sec            */
+double GpsDateToGpsTime(long GpsRollover, long GpsWeek, double GpsSecond)
+{
+      return(((GpsRollover*1024.0+GpsWeek)*7.0-7300.5)*86400.0+GpsSecond); 
+}
+/**********************************************************************/
+/*   Convert Time to Year, Month, Day, Hour, Minute, and Second       */
+/*   Time is seconds since J2000 epoch (01 Jan 2000 12:00:00.0)       */
+/*   Outputs are rounded to LSB to avoid loss of precision            */
+/*   Ref. Jean Meeus, 'Astronomical Algorithms', QB51.3.E43M42, 1991. */
+/*   This function is agnostic to the TT-to-UTC offset.  You get out  */
+/*   what you put in.                                                 */
+void TimeToDate(double Time, long *Year, long *Month, long *Day,
+                  long *Hour, long *Minute, double *Second, double LSB)
+{
+      double Z,F,A,B,C,D,E,alpha;
+      double FD,JD;
+
+      JD = Time/86400.0 + 2451545.0;
+
+      Z= floor(JD+0.5);
+      F=(JD+0.5)-Z;
+
+      if (Z < 2299161.0) {
+         A = Z;
+      }
+      else {
+         alpha = floor((Z-1867216.25)/36524.25);
+         A = Z+1.0+alpha - floor(alpha/4.0);
+      }
+
+      B = A + 1524.0;
+      C = floor((B-122.1)/365.25);
+      D = floor(365.25*C);
+      E = floor((B-D)/30.6001);
+
+      FD = B - D - floor(30.6001*E) + F;
+      *Day = (long) FD;
+
+      if (E < 14.0) {
+         *Month = (long) (E - 1.0);
+         *Year = (long) (C - 4716.0);
+      }
+      else {
+         *Month = (long) (E - 13.0);
+         *Year = (long) (C - 4715.0);
+      }
+
+      FD = Time-43200.0+0.5*LSB;
+      FD = FD - ((long) (FD/86400.0))*86400.0;
+      if (FD < 0.0) FD += 86400.0;
+
+      *Hour = (long) (FD/3600.0);
+
+      FD -= 3600.0*(*Hour);
+
+      *Minute = (long) (FD/60.0);
+
+      *Second = FD - 60.0*(*Minute);
+
+      /* Clean up roundoff */
+      *Second = ((long) (*Second/LSB))*LSB;
+}
+

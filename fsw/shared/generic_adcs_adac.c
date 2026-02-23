@@ -12,6 +12,7 @@
 #include "generic_adcs_adac.h"
 #include <stdbool.h>
 
+static int  igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
@@ -29,11 +30,16 @@ static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Ine
 static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
-void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD,
-                                                                   Generic_ADCS_GNC_Tlm_Payload_t *GNC,
-                                                                   Generic_ADCS_AC_Tlm_Payload_t  *ACS)
+void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, 
+                                                                   Generic_ADCS_EPH_Mag_Tlm_Payload_t *EPH,
+                                                                   Generic_ADCS_AD_Tlm_Payload_t      *AD,
+                                                                   Generic_ADCS_GNC_Tlm_Payload_t     *GNC,
+                                                                   Generic_ADCS_AC_Tlm_Payload_t      *ACS)
 {
     char junk[512], newline;
+    // EPH
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%d%[^\n]%[\n]", &EPH->nmax, junk, &newline);
     // AD
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &AD->Imu.alpha, junk, &newline);
@@ -83,10 +89,12 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
 }
 
 void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Generic_ADCS_DI_Tlm_Payload_t *DI,
+                                                                      Generic_ADCS_EPH_Mag_Tlm_Payload_t  *EPH,
                                                                       Generic_ADCS_AD_Tlm_Payload_t       *AD,
                                                                       Generic_ADCS_GNC_Tlm_Payload_t      *GNC,
                                                                       Generic_ADCS_AC_Tlm_Payload_t       *ACS)
 {
+    igrf(EPH, &DI->Gps, GNC);
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
     AD_st(&DI->St, &AD->ST);
@@ -124,6 +132,237 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
             }
             break;
     }
+}
+
+#define MAXDEG 13
+#define MAXCOEFF (MAXDEG*(MAXDEG+2))
+#define RAD2DEG (180.0/M_PI)
+
+const int IGRF_DATE = 2020;
+const int IGRF_ORD = 13;
+const int SV_ORD = 8;
+const float igrf_coeffs[195] = {-29404.8,-1450.9,4652.5,-2499.6,2982,-2991.6,1677,-734.6,1363.2,-2381.2,-82.1,1236.2,241.9,525.7,-543.4,903,809.5,281.9,86.3,-158.4,-309.4,199.7,48,-349.7,-234.3,363.2,47.7,187.8,208.3,-140.7,-121.2,-151.2,32.3,13.5,98.9,66,65.5,-19.1,72.9,25.1,-121.5,52.8,-36.2,-64.5,13.5,8.9,-64.7,68.1,80.6,-76.7,-51.5,-8.2,-16.9,56.5,2.2,15.8,23.5,6.4,-2.2,-7.2,-27.2,9.8,-1.8,23.7,9.7,8.4,-17.6,-15.3,-0.5,12.8,-21.1,-11.7,15.3,14.9,13.7,3.6,-16.5,-6.9,-0.3,2.8,5,8.4,-23.4,2.9, 11,-1.5,9.8,-1.1,-5.1,-13.2,-6.3,1.1,7.8,8.8,0.4,-9.3,-1.4,-11.9,9.6,-1.9,-6.2,3.4,-0.1,-0.2,1.7,3.6,-0.9,4.8,0.7,-8.6,-0.9,-0.1,1.9,-4.3,1.4,-3.4,-2.4,-0.1,-3.8,-8.8,3,-1.4,0,-2.5,2.5,2.3,-0.6,-0.9,-0.4,0.3,0.6,-0.7,-0.2,-0.1,-1.7,1.4,-1.6,-0.6,-3,0.2,-2,3.1,-2.6,-2,-0.1,-1.2,0.5,0.5,1.3,1.4,-1.2,-1.8,0.7,0.1,0.3,0.8,0.5,-0.2,-0.3,0.6,-0.5,0.2,0.1,-0.9,-1.1,0,-0.3,0.5,0.1,-0.9,-0.9,0.5,0.6,0.7,1.4,-0.3,-0.4,0.8,-1.3,0,-0.1,0.8,0.3,0,-0.1,0.4,0.5,0.1,0.5,0.5,-0.4,-0.5,-0.4,-0.4,-0.6};
+const float igrf_sv[80] = {5.7,7.4,-25.9,-11,-7,-30.2,-2.1,-22.4,2.2,-5.9,6,3.1,-1.1,-12,0.5,-1.2,-1.6,-0.1,-5.9,6.5,5.2,3.6,-5.1,-5,-0.3,0.5,0,-0.6,2.5,0.2,-0.6,1.3,3,0.9,0.3,-0.5,-0.3,0,0.4,-1.6,1.3,-1.3,-1.4,0.8,0,0,0.9,1,-0.1,-0.2,0.6,0,0.6,0.7,-0.8,0.1,-0.2,-0.5,-1.1,-0.8,0.1,0.8,0.3,0,0.1,-0.2,-0.1,0.6,0.4,-0.2,-0.1,0.5,0.4,-0.3,0.3,-0.4,-0.1,0.5,0.4};
+
+float mag_coeff[MAXCOEFF];                   /*Computed coefficients*/
+
+int extrapsh(int date)
+{
+   int nmax;
+   int k, l;
+   int i;
+   int igo = IGRF_ORD,svo = SV_ORD;
+   float factor;
+   /*# of years to extrapolate */
+   factor = date - IGRF_DATE;
+/*make shure that degree is smaller then MAXDEG */
+   if(igo > MAXDEG) {
+      igo = MAXDEG;
+   }
+   if(svo > MAXDEG) {
+      svo = MAXDEG;
+   }
+   /*check for equal degree*/
+   if (igo == svo) {
+      k =  igo * (igo + 2);
+      nmax = igo;
+   }else{
+/* check if reference is bigger */
+      if (igo > svo) {
+         k = svo * (svo + 2);
+         l = igo * (igo + 2);
+         /* copy extra elements unchanged */
+         for ( i = k; i < l; ++i) {
+            mag_coeff[i] = igrf_coeffs[i];
+         }
+         /*maximum degree of model */
+         nmax = igo;
+      }else{
+         k = igo * (igo + 2);
+         l = svo * (svo + 2);
+         /*put in change for extra elements? */
+         for(i = k; i < l; ++i) {
+            mag_coeff[i] = factor * igrf_sv[i];
+         }
+         nmax = svo;
+      }
+   }
+/*apply secular variations to model */
+   for ( i = 0; i < k; ++i) {
+      mag_coeff[i] = igrf_coeffs[i] + factor * igrf_sv[i];
+   }
+   /* return maximum degree of model and secular variations */
+   return nmax;
+}
+
+#define PQ_BUFFSIZE         32
+
+static int igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+   float slat;
+   float clat;
+   float ratio;
+   float aa, bb, cc;
+   float rr;
+   float fm,fn;
+   float sl[MAXDEG];
+   float cl[MAXDEG];
+   float p[PQ_BUFFSIZE];
+   float q[PQ_BUFFSIZE];
+   int i,j,k,l,m,n;
+   int kw;
+   int npq;
+   float x,y,z;
+   Matrix3x3f Dcm_NEDtoECEF, Dcm_ECEFtoECIF;
+   Vector3f dest, Bfield_ECIF, Bfield_ECEF ;
+   float PriMerAng;
+   double GMST;
+   float elev;
+
+   double GpsTime = GpsDateToGpsTime(2, DI_GPS->Weeks, DI_GPS->SecondsIntoWeek); // rollover=2, valid April 7, 2019 to November 20, 2038
+   double j2000 = GpsTime - 7300.5*86400 + (19+32.184);
+   long year, month, day, hour, minute;
+   double second;
+   TimeToDate(j2000, &year, &month, &day, &hour, &minute, &second, 0.01);
+
+   extrapsh(year);
+
+   /* Prime Meridian Calculation */
+   GMST = JD_TO_GMST(GpsTime_TO_JD(2, DI_GPS->Weeks, DI_GPS->SecondsIntoWeek)); // rollover=2, valid April 7, 2019 to November 20, 2038
+   PriMerAng = TWOPI*GMST;
+
+/*calculate sin and cos of latitude */
+   slat = sin(DI_GPS->lat);
+   clat = cos(DI_GPS->lat);
+   /*prevent divide by zero */
+   if(clat < EPS16) {
+      clat = EPS16;
+   }
+
+   /*calculate sin and cos of longitude */
+   sl[0] = sin(DI_GPS->lon);
+   cl[0] = cos(DI_GPS->lon);
+
+   /*initialize coordinates */
+   x = 0;
+   y = 0;
+   z = 0;
+
+   Dcm_NEDtoECEF.Comp[0][0] = -slat*cl[0];
+   Dcm_NEDtoECEF.Comp[0][1] = -sl[0];
+   Dcm_NEDtoECEF.Comp[0][2] = -clat*cl[0];
+   Dcm_NEDtoECEF.Comp[1][0] = -slat*sl[0];
+   Dcm_NEDtoECEF.Comp[1][1] = cl[0];
+   Dcm_NEDtoECEF.Comp[1][2] = -clat*sl[0];
+   Dcm_NEDtoECEF.Comp[2][0] = clat;
+   Dcm_NEDtoECEF.Comp[2][1] = 0;
+   Dcm_NEDtoECEF.Comp[2][2] = -slat;
+
+   /*calculate loop iterations */
+   npq = (bfld->nmax * (bfld->nmax + 3)) / 2;
+
+/*calculate ratio of earths radius to elevation */
+   elev = (DI_GPS->alt+RE)*M2KM;
+   ratio = RE*M2KM / elev;
+
+   aa = sqrt(3.0);
+
+/*set initial values of p */
+   p[0] = 2.0 * slat;
+   p[1] = 2.0 * clat;
+   p[2] = 4.5 * slat * slat - 1.5;
+   p[3] = 3.0 * aa * clat * slat;
+
+/*Set initial values of q */
+   q[0] = -clat;
+   q[1] = slat;
+   q[2] = -3.0 * clat * slat;
+   q[3] = aa * (slat * slat - clat * clat);
+
+   for(k = 0,l = 1,n = 0,m = 0,rr = ratio*ratio; k < npq; k++,m++) {
+      /*testing get wrapped idx */
+      kw = k%PQ_BUFFSIZE;
+      if (n <= m) {
+         m = -1;
+         n += 1;
+         /*rr = pow(ratio,n+2); */
+         rr *= ratio;
+         fn = n;
+      }
+      fm = m+1;
+      if (k >= 4) {
+         j = k - n;
+         /*wrap j for smaller array */
+         j = j%PQ_BUFFSIZE;
+         if (m+1 == n) {
+            aa = sqrt(1.0 - 0.5/fm);
+            p[kw] = (1.0 + 1.0/fm) * aa * clat * p[j-1];
+            q[kw] = aa * (clat * q[j-1] + slat/fm * p[j-1]);
+            sl[m] = sl[m-1] * cl[0] + cl[m-1] * sl[0];
+            cl[m] = cl[m-1] * cl[0] - sl[m-1] * sl[0];
+         }else{
+            aa = sqrt(fn*fn - fm*fm);
+            bb = sqrt(((fn - 1.0)*(fn-1.0)) - (fm * fm))/aa;
+            cc = (2.0 * fn - 1.0)/aa;
+            i = k - 2 * n + 1;
+            /*wrap i for smaller array */
+            i = i%PQ_BUFFSIZE;
+            p[kw] = (fn + 1.0) * (cc * slat/fn * p[j] - bb/(fn - 1.0) * p[i]);
+            q[kw] = cc * (slat * q[j] - clat/fn * p[j]) - bb * q[i];
+         }
+      }
+      aa = rr * mag_coeff[l-1];
+
+      if (m == -1) {
+         x = x + aa * q[kw];
+         z = z - aa * p[kw];
+         l += 1;
+      }else{
+         bb = rr * mag_coeff[l];
+         cc = aa * cl[m] + bb * sl[m];
+         x = x + cc * q[kw];
+         z = z - cc * p[kw];
+         if (clat > 0) {
+            y = y + (aa * sl[m] - bb * cl[m]) *fm * p[kw]/((fn + 1.0) * clat);
+         }else{
+            y = y + (aa * sl[m] - bb * cl[m]) * q[kw] * slat;
+         }
+         l += 2;
+      }
+   }
+
+   /*set destination values */
+   dest.Comp[0] = x;
+   dest.Comp[1] = y;
+   dest.Comp[2] = z;
+   Matrix3x3f_MultVec ( &Bfield_ECEF, &Dcm_NEDtoECEF, &dest );
+
+   Dcm_ECEFtoECIF.Comp[0][0] =  cos(PriMerAng);
+   Dcm_ECEFtoECIF.Comp[0][1] = -sin(PriMerAng);
+   Dcm_ECEFtoECIF.Comp[0][2] = 0;
+   Dcm_ECEFtoECIF.Comp[1][0] =  sin(PriMerAng);
+   Dcm_ECEFtoECIF.Comp[1][1] =  cos(PriMerAng);
+   Dcm_ECEFtoECIF.Comp[1][2] = 0;
+   Dcm_ECEFtoECIF.Comp[2][0] = 0;
+   Dcm_ECEFtoECIF.Comp[2][1] = 0;
+   Dcm_ECEFtoECIF.Comp[2][2] = 1;
+
+   Matrix3x3f_MultVec( &Bfield_ECIF, &Dcm_ECEFtoECIF, &Bfield_ECEF);
+
+   GNC->Bfield_ECIF[0] = Bfield_ECIF.Comp[0]*NANO2TSLA;
+   GNC->Bfield_ECIF[1] = Bfield_ECIF.Comp[1]*NANO2TSLA;
+   GNC->Bfield_ECIF[2] = Bfield_ECIF.Comp[2]*NANO2TSLA;
+
+   GNC->Bfield_ECEF[0] = Bfield_ECEF.Comp[0]*NANO2TSLA;
+   GNC->Bfield_ECEF[1] = Bfield_ECEF.Comp[1]*NANO2TSLA;
+   GNC->Bfield_ECEF[2] = Bfield_ECEF.Comp[2]*NANO2TSLA;
+
+   GNC->Bfield_NED[0] = x*NANO2TSLA;
+   GNC->Bfield_NED[1] = y*NANO2TSLA;
+   GNC->Bfield_NED[2] = z*NANO2TSLA;
+
+
+   return 0;
 }
 
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU)

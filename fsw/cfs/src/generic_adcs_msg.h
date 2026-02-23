@@ -68,6 +68,40 @@ typedef struct
 #define GENERIC_ADCS_HK_TLM_LNGTH sizeof(Generic_ADCS_Hk_tlm_t)
 
 /*
+** Generic_ADCS EPH type definition
+*/
+typedef struct
+{
+   double date_epoch;
+   double coeff_G1;
+   double coeff_G2;
+   double coeff_L1;
+   double coeff_l2;
+   double coeff_long1;
+   double coeff_long2;
+   double cos_obliq_eclp;
+   double sin_obliq_eclp;
+} __attribute__((packed)) Generic_ADCS_EPH_Sol_Tlm_Payload_t;
+
+typedef struct 
+{
+   int nmax;
+} __attribute__((packed)) Generic_ADCS_EPH_Mag_Tlm_Payload_t;
+
+typedef struct
+{
+    Generic_ADCS_EPH_Sol_Tlm_Payload_t Sol;
+    Generic_ADCS_EPH_Mag_Tlm_Payload_t bfld;
+} __attribute__((packed)) Generic_ADCS_EPH_Tlm_Payload_t;
+
+typedef struct
+{
+    CFE_MSG_TelemetryHeader_t     TlmHeader;
+    Generic_ADCS_EPH_Tlm_Payload_t Payload;
+} __attribute__((packed)) Generic_ADCS_EPH_Tlm_t;
+#define GENERIC_ADCS_EPH_LNGTH sizeof(Generic_ADCS_EPH_Tlm_t)
+
+/*
 ** Generic_ADCS DI type definition
 */
 typedef struct
@@ -264,6 +298,9 @@ typedef struct
     uint8                    qValid;
     double                   qbn[4];
     double                   qErr[4];
+    double                   Bfield_ECIF[3];
+    double                   Bfield_ECEF[3];
+    double                   Bfield_NED[3];
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct
