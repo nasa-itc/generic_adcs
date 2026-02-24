@@ -165,9 +165,9 @@ typedef struct
     double   VelX;
     double   VelY;
     double   VelZ;
-    float    lat;
-    float    lon;
-    float    alt;
+    double   lat;
+    double   lon;
+    double   alt;
 } __attribute__((packed)) Generic_ADCS_DI_Gps_Tlm_Payload_t;
 
 typedef struct
@@ -231,9 +231,9 @@ typedef struct
     double   VelX;
     double   VelY;
     double   VelZ;
-    float    lat;
-    float    lon;
-    float    alt;
+    double   lat;
+    double   lon;
+    double   alt;
 } __attribute__((packed)) Generic_ADCS_AD_Gps_Tlm_Payload_t;
 
 typedef struct 
@@ -250,14 +250,43 @@ typedef struct
    int32  sample_size;    /*Number of samples used in moving average filter*/
 } __attribute__((packed)) Generic_AD_rateEst_Tlm_Payload_t;
 
+typedef struct 
+{
+   long init;          /* Initialization marker */
+   double dt;          /* rate at which dynamics propogated */
+   double eye3[3][3];
+   double sig_u;
+   double sig_v;
+   double sig_mag;
+   double sig_sun;
+   double sig_star;
+   double bias_est[3];
+   double qk_est[4];
+   double Pk[6][6];
+   double Qk[6][6];
+   double Gt[6][6];
+   double Hk[3][6];
+   double delta_xk_est[6];
+   double ek_ST_bound;
+   double ek_FSS_bound;
+   double ek_MG_bound;
+   double wbn[3];
+   double qbn[4];
+   int AKFvalid;
+   double Mag_range;
+   double Dvg_tol;
+   int reset_flag;
+ } __attribute__((packed)) Generic_ADCS_AD_murAKF_Tlm_Payload_t;
+
 typedef struct
 {
-    Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
-    Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
-    Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
-    Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
-    Generic_ADCS_AD_Gps_Tlm_Payload_t Gps;
-    Generic_AD_rateEst_Tlm_Payload_t  RateEst;
+    Generic_ADCS_AD_Mag_Tlm_Payload_t    Mag;
+    Generic_ADCS_AD_Sol_Tlm_Payload_t    Sol;
+    Generic_ADCS_AD_Imu_Tlm_Payload_t    Imu;
+    Generic_ADCS_AD_ST_Tlm_Payload_t     ST;
+    Generic_ADCS_AD_Gps_Tlm_Payload_t    Gps;
+    Generic_AD_rateEst_Tlm_Payload_t     RateEst;
+    Generic_ADCS_AD_murAKF_Tlm_Payload_t AKF;
 } __attribute__((packed)) Generic_ADCS_AD_Tlm_Payload_t;
 
 typedef struct

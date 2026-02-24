@@ -24,6 +24,8 @@ static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t  GNC, Generic_ADCS_AD_Mag_
                        Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD);
 static void calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD );
 static void calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD );
+static void AD_murAKF(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AD_ST_Tlm_Payload_t st, Generic_ADCS_AD_Imu_Tlm_Payload_t imu, 
+    Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_ADCS_AD_murAKF_Tlm_Payload_t *AKF);
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
 static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
@@ -63,6 +65,159 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in,
         AD->RateEst.svb_prev[i] = 0.0;
         AD->RateEst.bvb_prev[i] = 0.0;
     }
+    int i,j;
+    double param[10] = {0,0,0,0,0,0,0,0,0,0};
+
+    AD->AKF.init = 1;
+    AD->AKF.dt   = GNC->DT;
+    AD->AKF.AKFvalid = 0;
+    AD->AKF.reset_flag = 0;
+
+    /* Initialize qbn */
+    AD->AKF.qbn[0] = 0.0;
+    AD->AKF.qbn[1] = 0.0;
+    AD->AKF.qbn[2] = 0.0;
+    AD->AKF.qbn[3] = 1.0;
+
+    /* Initialize wbn */
+    AD->AKF.wbn[0] = 0.0;
+    AD->AKF.wbn[1] = 0.0;
+    AD->AKF.wbn[2] = 0.0;
+
+    AD->AKF.qk_est[0] = 0.0;
+    AD->AKF.qk_est[1] = 0.0;
+    AD->AKF.qk_est[2] = 0.0;
+    AD->AKF.qk_est[3] = 1.0;
+    for(i = 0; i < 6; i++) {
+        AD->AKF.delta_xk_est[i] = 0.0;
+    }
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 6; j++) {
+            if(j < 3) {
+                if (i == j ) {
+                AD->AKF.Hk[i][j] = 1.0;
+                }
+                else{
+                AD->AKF.Hk[i][j] = 0.0;
+                }
+            }
+            else{
+                AD->AKF.Hk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Define the identity matrix */
+    for(i = 0; i < 3; i++) {
+        for(j = 0; j < 3; j++) {
+            if (i == j ) {
+                AD->AKF.eye3[i][j] = 1.0;
+            }
+            else{
+                AD->AKF.eye3[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Initialize constants */
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.sig_u, junk, &newline); /* variance associated to gyro drift, from datasheet */
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.sig_v, junk, &newline); /* variance associated with random drift, from datasheet */
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_ST_bound, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_FSS_bound, junk, &newline);
+    AD->AKF.ek_FSS_bound *= D2R;
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_MG_bound, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.Mag_range, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.Dvg_tol, junk, &newline);
+
+    /* Initialize the covariance matrix Pk */
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &param[0], &param[1], junk, &newline);
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i == j ) {
+                if (i < 3) {
+                AD->AKF.Pk[i][j] = param[0];
+                }
+                else {
+                AD->AKF.Pk[i][j] = param[1];
+                }
+            }
+            else {
+                AD->AKF.Pk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Initialize the discrete process noise covariance Qk */
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i < 3 && j < 3) {
+                if (i == j) {
+                AD->AKF.Qk[i][j] = AD->AKF.sig_v*AD->AKF.sig_v*AD->AKF.dt+(1.0/3.0)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i < 3 && j >= 3) {
+                if (i == j-3) {
+                AD->AKF.Qk[i][j] = -(0.5)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j < 3) {
+                if (i-3 == j) {
+                AD->AKF.Qk[i][j] = -(0.5)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j >= 3) {
+                if (i == j) {
+                AD->AKF.Qk[i][j] = AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i == j ) {
+                if (i < 3) {
+                AD->AKF.Gt[i][j] = -1.0;
+                }
+                else {
+                AD->AKF.Gt[i][j] = 1.0;
+                }
+            }
+            else {
+                AD->AKF.Gt[i][j] = 0.0;
+            }
+        }
+    }
+    /* Initialize covariance matrix of sensor noise, Rk(sensor) = sig(sensor)^2 * eye3 */
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &param[0], &param[1], &param[2], junk, &newline);
+    AD->AKF.sig_mag = param[0];
+    AD->AKF.sig_sun = param[1];
+    AD->AKF.sig_star = param[2]; /* 120 arcsec to rad */
+
+    /* Initialize bias to zer0 */
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &param[0], &param[1], &param[2], junk, &newline);
+    AD->AKF.bias_est[0] = param[0];
+    AD->AKF.bias_est[1] = param[1];
+    AD->AKF.bias_est[2] = param[2];
+
     // GNC
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &GNC->DT, junk, &newline);
@@ -109,6 +264,7 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
     AD_gps(&DI->Gps, &AD->Gps);
     AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
     AD_rateEst(*GNC, AD->Mag, AD->Sol, &AD->RateEst);
+    AD_murAKF(GNC, AD->ST, AD->Imu, AD->Mag, AD->Sol, &AD->AKF);
 
     AD_to_GNC(AD, GNC);
     for (int i = 0; i < 3; i++)
@@ -726,6 +882,356 @@ static void calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_
    {
       AD->ws[i] = rate * axis[i];
    }
+
+}
+
+static void AD_murAKF(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AD_ST_Tlm_Payload_t st, Generic_ADCS_AD_Imu_Tlm_Payload_t imu, 
+    Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_ADCS_AD_murAKF_Tlm_Payload_t *AKF)
+{
+   double west_sk[3][3] = {{0}}, wsk_sq[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+   double PkPhi[6][6], PhiPkPhi[6][6];
+   double Ad[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, r_sk[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, Hc[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, Pkm[6][6], Phi[6][6], GtQ[6][6], GQGt[6][6];
+   double PkHk[6][3], HkPkHk[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, HkPkHkRk[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, HkPkHkRk_i[3][3] = {{0,0,0},{0,0,0},{0,0,0}}, HkT_HkPkHkRk_i[6][3], Lk[6][3], LkHk[6][6], I6_LkHk[6][6];
+
+   int snum = 1;
+
+   int i,j;
+   int magValid = 0;                           /* Initialize MAG validity flag */
+   int ResSTValid = 0;                         /* Initialize ST residual validity flag */
+   int ResMAGValid = 0;                        /* Initialize MAG residual validity flag */
+   int ResFSSValid = 0;                        /* Initialize FSS residual validity flag */
+   double qst[4] = {0.0, 0.0, 0.0, 1.0};       /* Initialize ST quaternion */
+   double qst_err[4] = {0.0, 0.0, 0.0, 1.0};   /* Initialize ST error quaternion */
+   double qkm_est[4] = {0.0, 0.0, 0.0, 1.0};   /* Initialize estimated quaternion */
+   double qdot[4] = {0.0, 0.0, 0.0, 1.0};      /* Initialize quaternion derivative */
+   double w_meas[3] = {0.0, 0.0, 0.0};         /* Initialize measured rates */
+   double w_est[3] = {0.0, 0.0, 0.0};          /* Initialize estimated rates */
+   double wn = 0.0;                             /* Magnitude of estimated rates */
+   double ek[3] = {0.0, 0.0, 0.0};             /* Initialize residual */
+   double sig = 0.0;                           /* Initialize covariance */
+   double b[3] = {0.0, 0.0, 0.0};              /* Initialize measurement vector in the body frame */
+   double r[3] = {0.0, 0.0, 0.0};              /* Initialize ephemeris data */
+   double r_est[3] = {0.0, 0.0, 0.0};          /* Initialize estimated vector */
+   double X3k[3] = {0.0, 0.0, 0.0};            /* Initialize estimated state */
+   double XiXk[4] = {0.0, 0.0, 0.0, 0.0};      /* Initialize intermediate parameter */
+   double delta_xkm_est[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; /* Initialize error state */
+   double xkd2[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; /* Initialize intermediate parameter */
+   double xkd[3] = {0.0, 0.0, 0.0};            /* Initialize intermediate parameter */
+   double Hkxk[3] = {0.0, 0.0, 0.0};           /* Initialize intermediate parameter */
+   static int StValid_prev = 0;
+
+
+   for (i = 0; i < 4; i++) qst[i] = st.qbn[i];
+
+   /* Initialization - Start AKF when ST is valid */
+   if (AKF->init == 1 && st.Valid == 1) {
+      AKF->init = 0;
+      /* Initialize q with star tracker data if valid */
+      for (i = 0; i < 4; i++) {
+         AKF->qk_est[i] = qst[i];
+      }
+      AKF->AKFvalid = 1;
+   }
+   else if (AKF->init == 1 && st.Valid == 0) {
+      AKF->AKFvalid = 0;
+   }
+
+   /* Only run AKF when IMU is valid */
+   if (AKF->init == 0 && imu.valid == 1) {
+      /* ------------------------Discrete Propagation -------------------------- */
+
+      /* Dynamics of Gyro bias */
+      for (i = 0; i < 3; i++) {
+         /* Construct gyro model */
+         w_meas[i] = imu.wbn[i];
+         /* Gyro sampling */
+         w_est[i] = w_meas[i]-AKF->bias_est[i];
+
+         AKF->wbn[i] = w_est[i];
+      }
+
+      /* Calculate the discrete-time State Transition Matrix (Phi) */
+      skewM(w_est,west_sk);
+      wn = MAGV(w_est);
+      MxM(west_sk, west_sk, wsk_sq);
+
+      for (i = 0; i < 6; i++) {
+         for (j = 0; j < 6; j++) {
+            if (i < 3 && j < 3) {
+               Phi[i][j] = AKF->eye3[i][j] - west_sk[i][j]*(sin(wn*AKF->dt)/wn) + wsk_sq[i][j]*((1-cos(wn*AKF->dt))/(wn*wn));
+            }
+
+            else if (i < 3 && j >= 3) {
+               Phi[i][j] = west_sk[i][j-3]*((1-cos(wn*AKF->dt))/(wn*wn))-AKF->eye3[i][j-3]*AKF->dt- wsk_sq[i][j-3]*((wn*AKF->dt-sin(wn*AKF->dt))/(wn*wn*wn));
+            }
+            else if (i >= 3 && j < 3) {
+               Phi[i][j] = 0.0;
+            }
+            else if (i >= 3 && j >= 3) {
+               if (i == j) {
+                  Phi[i][j] = 1.0;
+               }
+               else {
+                  Phi[i][j] = 0.0;
+               }
+            }
+         }
+      }
+
+      /* discrete time quaternion propagation */
+      QW2QDOT(AKF->qk_est,w_est,qdot);
+      for (i = 0; i < 4; i++) {
+         qkm_est[i] = AKF->qk_est[i]+qdot[i]*AKF->dt;
+      }
+      UNITQ(qkm_est);
+
+      /* Propagate the covariance matrix (Pk-) */
+      M66xM66(AKF->Gt,AKF->Qk,GtQ);
+      M66xM66T(GtQ,AKF->Gt,GQGt);
+      M66xM66T(AKF->Pk,Phi,PkPhi);
+      M66xM66(Phi,PkPhi,PhiPkPhi);
+      for (i = 0; i < 6; i++) {
+         for (j = 0; j < 6; j++) {
+            Pkm[i][j] = PhiPkPhi[i][j]+GQGt[i][j];
+         }
+      }
+
+      /* -------------------------------------------------------------- */
+
+      /* ------------------ Murrell's Version: -----------------------  */
+
+      /*  Initialize to Xkm to 0 */
+      for (i = 0; i < 3; i++) {
+         delta_xkm_est[i] = 0.0;
+         delta_xkm_est[i+3] = 0.0;
+      }
+
+      /* Get sensor data bi */
+      while (snum < 4) {
+         if (snum == 1) {   /* Get Mag data */
+            magValid = MAGV(mag.bvb) > AKF->Mag_range;
+            if(magValid == 1) {
+               for (i = 0; i < 3; i++) {
+                  b[i] = mag.bvb[i];
+               }
+               sig = AKF->sig_mag;
+            }
+         }
+
+         else if (snum == 2) {   /* Get ST data */
+            if (st.Valid == 1) {
+               QxQT(qst,AKF->qk_est,qst_err);
+               sig = AKF->sig_star;
+            }
+         }
+
+         else if (snum == 3) {   /* Get FSS data */
+            if (sol.FssValid == 1) {
+               for (i = 0; i < 3; i++) {
+                  b[i] = sol.svb[i];
+               }
+               sig = AKF->sig_sun;
+            }
+
+         }
+
+         if ((snum == 1 && magValid == 1) || (snum == 3 && sol.FssValid == 1)) {
+            /* Get Ephemeris data */
+            if (snum == 1) {
+               r[0] = GNC->Bfield_ECIF[0];
+               r[1] = GNC->Bfield_ECIF[1];
+               r[2] = GNC->Bfield_ECIF[2];
+            }
+            else if (snum == 3) {
+               r[0] = GNC->svn[0];
+               r[1] = GNC->svn[1];
+               r[2] = GNC->svn[2];
+            }
+
+            /* Calculate Sensitivity matrix HK = [skew(A(qm_est)*rx) zeros] */
+            Q2C(qkm_est,Ad);
+            skewM(r,r_sk);
+            MxM(Ad,r_sk,Hc);
+
+            for (i = 0; i < 3; i++) {
+               for (j = 0; j < 6; j++) {
+                  if(j < 3) {
+                     AKF->Hk[i][j] = Hc[i][j];
+                  }
+                  else{
+                     AKF->Hk[i][j] = 0.0;
+                  }
+               }
+            }
+
+            /* Calculate Kalman gain Lk = Pkm*HkT[Hk*Pkm*HkT + Rk] */
+            M66xM36T(Pkm,AKF->Hk,PkHk);
+            M36xM63(AKF->Hk,PkHk,HkPkHk);
+            for (i = 0; i < 3; i++) {
+               for (j = 0; j < 3; j++) {
+                  HkPkHkRk[i][j] = HkPkHk[i][j] + sig*sig*AKF->eye3[i][j];
+               }
+            }
+            MINV3(HkPkHkRk,HkPkHkRk_i);
+            M36TxM33(AKF->Hk,HkPkHkRk_i,HkT_HkPkHkRk_i);
+            M66xM63(Pkm,HkT_HkPkHkRk_i,Lk);
+
+            /* Update the covariance matrix (Pk+) = [I-Lk*Hk]*Pkm */
+            M63xM36(Lk,AKF->Hk,LkHk);
+            for (i = 0; i < 6; i++) {
+               for (j = 0; j < 6; j++) {
+                  if (i == j) {
+                     I6_LkHk[i][j] = 1.0-LkHk[i][j];
+                  }
+                  else {
+                     I6_LkHk[i][j] = -LkHk[i][j];
+                  }
+               }
+            }
+            M66xM66(I6_LkHk,Pkm,AKF->Pk);
+
+            /* Calculate residual ek = (bi - A(qm_est)*ri) */
+            MxV(Ad,r, r_est);
+
+            for (i = 0; i < 3; i++) {
+               ek[i] = b[i]- r_est[i];
+            }
+            /* Define FSS and Mag residual validity */
+            if (snum == 1) {
+               if (MAGV(ek) < AKF->ek_MG_bound) {
+                  ResMAGValid = 1;
+               }
+               else {
+                  ResMAGValid = 0;
+               }
+            }
+            else if (snum == 3) {
+               if (MAGV(ek) < AKF->ek_FSS_bound ) {
+                  ResFSSValid = 1;
+               }
+               else {
+                  ResFSSValid = 0;
+               }
+            }
+
+         }
+
+         else if (snum == 2 && st.Valid == 1) {
+            for (i = 0; i < 3; i++) {
+               for (j = 0; j < 6; j++) {
+                  if(j < 3) {
+                     AKF->Hk[i][j] = AKF->eye3[i][j];
+                  }
+                  else{
+                     AKF->Hk[i][j] = 0.0;
+                  }
+               }
+            }
+
+            /* Calculate Kalman gain Lk = Pkm*HkT[Hk*Pkm*HkT + Rk] */
+            M66xM36T(Pkm,AKF->Hk,PkHk);
+            M36xM63(AKF->Hk,PkHk,HkPkHk);
+            for (i = 0; i < 3; i++) {
+               for (j = 0; j < 3; j++) {
+                  HkPkHkRk[i][j] = HkPkHk[i][j] + sig*sig*AKF->eye3[i][j];
+               }
+            }
+            MINV3(HkPkHkRk,HkPkHkRk_i);
+            M36TxM33(AKF->Hk,HkPkHkRk_i,HkT_HkPkHkRk_i);
+            M66xM63(Pkm,HkT_HkPkHkRk_i,Lk);
+
+            /* Update the covariance matrix (Pk+) = [I-Lk*Hk]*Pkm */
+            M63xM36(Lk,AKF->Hk,LkHk);
+            for (i = 0; i < 6; i++) {
+               for (j = 0; j < 6; j++) {
+                  if (i == j) {
+                     I6_LkHk[i][j] = 1.0-LkHk[i][j];
+                  }
+                  else {
+                     I6_LkHk[i][j] = -LkHk[i][j];
+                  }
+               }
+            }
+            M66xM66(I6_LkHk,Pkm,AKF->Pk);
+
+            /* Calculate residual ek */
+            for (i = 0; i < 3; i++) {
+               ek[i] = 2*qst_err[i];
+            }
+            /* Define ST residual validity */
+            if (MAGV(ek) < AKF->ek_ST_bound) {
+               ResSTValid = 1;
+            }
+            else {
+               ResSTValid = 0;
+            }
+         }
+
+         /* Check for negative and divergence in diagonal elements of covariance P */
+         if (st.Valid == 1 && StValid_prev == 0) {
+            AKF->reset_flag = 1;
+         }
+
+        else if (st.Valid == 1) {
+            for (i = 0; i < 6; i++) {
+               if (AKF->Pk[i][i] < 0.0 || AKF->Pk[i][i] >= AKF->Dvg_tol ) {
+                  AKF->reset_flag = 1;
+                  break;
+               }
+            }
+         }
+
+         /* Do an update only if residuals are valid */
+         if ( ((ResMAGValid == 1) && snum == 1) ||  ((ResSTValid == 1) && snum == 2) ||  ((ResFSSValid == 1) && snum == 3) )  {
+            /* Update state delta_xk_est = delta_xkm_est + Lk[ek - Hk*delta_xkm_est] */
+            M36xV6(AKF->Hk, delta_xkm_est, Hkxk);
+            for (i = 0; i < 3; i++) {
+               xkd[i] = ek[i]-Hkxk[i];
+            }
+            M63xV3(Lk,xkd, xkd2);
+            for (i = 0; i < 6; i++) {
+               AKF->delta_xk_est[i] = delta_xkm_est[i]+xkd2[i];
+               if (i < 3) {
+                  X3k[i] = AKF->delta_xk_est[i];
+               }
+               delta_xkm_est[i] = AKF->delta_xk_est[i];
+               /*  delta_xkm_est[i] = 0.0; */  /* Uncomment this line if running only one sensor, ignore for multiple sensors */
+            }
+            for (i = 0; i < 6; i++) {
+               for (j = 0; j < 6; j++) {
+                  Pkm[i][j] = AKF->Pk[i][j];
+               }
+            }
+
+            /* Update quaternion estimate */
+            QW2QDOT(qkm_est,X3k,XiXk);
+            for (i = 0; i < 4; i++) {
+               AKF->qk_est[i] = qkm_est[i]+XiXk[i];
+            }
+            UNITQ(AKF->qk_est);
+
+            /* Update bias estimate */
+            for (i = 0; i < 3; i++) {
+               AKF->bias_est[i] = AKF->bias_est[i]+ delta_xkm_est[i+3];
+            }
+            AKF->AKFvalid = 1;
+         }
+         else if ((ResSTValid == 0) &&  (ResMAGValid == 0) &&  (ResFSSValid == 0))  {
+            AKF->AKFvalid = 0;
+         }
+         snum++;
+      }
+
+      for (i = 0; i < 4; i++) {
+         AKF->qbn[i] = AKF->qk_est[i];
+      }
+
+   }
+   else if (AKF->init == 0 && imu.valid == 0) {
+      AKF->AKFvalid = 0;
+   }
+
+   StValid_prev = st.Valid;
 
 }
 
