@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 static int  igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static int32_t solar_ephemeris(Generic_ADCS_EPH_Sol_Tlm_Payload_t *sol, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
 static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
 static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
@@ -31,7 +32,7 @@ static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
 void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, 
-                                                                   Generic_ADCS_EPH_Mag_Tlm_Payload_t *EPH,
+                                                                   Generic_ADCS_EPH_Tlm_Payload_t     *EPH,
                                                                    Generic_ADCS_AD_Tlm_Payload_t      *AD,
                                                                    Generic_ADCS_GNC_Tlm_Payload_t     *GNC,
                                                                    Generic_ADCS_AC_Tlm_Payload_t      *ACS)
@@ -39,7 +40,13 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in,
     char junk[512], newline;
     // EPH
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
-    fscanf(in, "%d%[^\n]%[\n]", &EPH->nmax, junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.date_epoch, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_G1, &EPH->Sol.coeff_G2, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_L1, &EPH->Sol.coeff_l2, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_long1, &EPH->Sol.coeff_long2, junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.cos_obliq_eclp, junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.sin_obliq_eclp, junk, &newline);
+    fscanf(in, "%d%[^\n]%[\n]", &EPH->bfld.nmax, junk, &newline);
     // AD
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &AD->Imu.alpha, junk, &newline);
@@ -89,12 +96,13 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in,
 }
 
 void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Generic_ADCS_DI_Tlm_Payload_t *DI,
-                                                                      Generic_ADCS_EPH_Mag_Tlm_Payload_t  *EPH,
+                                                                      Generic_ADCS_EPH_Tlm_Payload_t      *EPH,
                                                                       Generic_ADCS_AD_Tlm_Payload_t       *AD,
                                                                       Generic_ADCS_GNC_Tlm_Payload_t      *GNC,
                                                                       Generic_ADCS_AC_Tlm_Payload_t       *ACS)
 {
-    igrf(EPH, &DI->Gps, GNC);
+    igrf(&EPH->bfld, &DI->Gps, GNC);
+    solar_ephemeris(&EPH->Sol, &DI->Gps, GNC);
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
     AD_st(&DI->St, &AD->ST);
@@ -146,7 +154,7 @@ const float igrf_sv[80] = {5.7,7.4,-25.9,-11,-7,-30.2,-2.1,-22.4,2.2,-5.9,6,3.1,
 
 float mag_coeff[MAXCOEFF];                   /*Computed coefficients*/
 
-int extrapsh(int date)
+static int extrapsh(int date)
 {
    int nmax;
    int k, l;
@@ -360,6 +368,60 @@ static int igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tl
    GNC->Bfield_NED[0] = x*NANO2TSLA;
    GNC->Bfield_NED[1] = y*NANO2TSLA;
    GNC->Bfield_NED[2] = z*NANO2TSLA;
+
+
+   return 0;
+}
+
+static int32_t solar_ephemeris(Generic_ADCS_EPH_Sol_Tlm_Payload_t *sol, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+   /*float Date_Julian, Date_Solar; */
+   double Date_Solar;
+   double g, g_rad;
+   double Long_Ecliptic;
+   double Sin_Long_Ecliptic;
+   double Unit_Sun_GciF[3];
+   double h[3];
+   double b;
+   double PosN[3];
+   double VelN[3];
+
+   Date_Solar = GpsTime_TO_JD(2, DI_GPS->Weeks, DI_GPS->SecondsIntoWeek) - sol->date_epoch; // rollover=2, valid April 7, 2019 to November 20, 2038
+
+   g = sol->coeff_G1 + sol->coeff_G2 * (double)Date_Solar;
+   g_rad = g*D2R;
+
+   Long_Ecliptic = sol->coeff_L1 + sol->coeff_l2 * Date_Solar +
+                   sol->coeff_long1*sin(g_rad) + sol->coeff_long2*sin(2*g_rad);
+
+   Sin_Long_Ecliptic = sin(Long_Ecliptic*D2R);
+   Unit_Sun_GciF[0] = cos(Long_Ecliptic*D2R);
+   Unit_Sun_GciF[1] = sol->cos_obliq_eclp * Sin_Long_Ecliptic;
+   Unit_Sun_GciF[2] = sol->sin_obliq_eclp * Sin_Long_Ecliptic;
+
+   GNC->svn[0] = Unit_Sun_GciF[0];
+   GNC->svn[1] = Unit_Sun_GciF[1];
+   GNC->svn[2] = Unit_Sun_GciF[2];
+
+    /*Calcualte number of elapsed days since Epoch of J2000 and corresponding angle of rotation*/
+    double GMST = JD_TO_GMST(Date_Solar);
+    double PriMerAng = TWOPI * GMST;
+    double ZAxis[3] = {0.0, 0.0, 1.0};
+    double C_W_TETE[3][3],C_TETE_J2000[3][3],C_ECEF_ECI[3][3];
+    HiFiEarthPrecNute(Date_Solar,C_TETE_J2000);
+    SimpRot(ZAxis,PriMerAng,C_W_TETE);
+    MxM(C_W_TETE,C_TETE_J2000,C_ECEF_ECI);
+    double PosW[3] = {DI_GPS->ECEFX, DI_GPS->ECEFY, DI_GPS->ECEFZ};
+    double VelW[3] = {DI_GPS->VelX, DI_GPS->VelY, DI_GPS->VelZ};
+
+   /* Solar beta angle */
+   MxV(C_ECEF_ECI, PosW, PosN);
+   MxV(C_ECEF_ECI, VelW, VelN);
+
+   VxV(PosN,VelN,h);
+   UNITV(h);
+   b = Limit(VoV(GNC->svn,h), -1.0, 1.0);
+   GNC->beta = asin(b);
 
 
    return 0;

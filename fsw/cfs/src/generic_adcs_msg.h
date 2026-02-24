@@ -301,6 +301,8 @@ typedef struct
     double                   Bfield_ECIF[3];
     double                   Bfield_ECEF[3];
     double                   Bfield_NED[3];
+    double                   svn[3];
+    double                   beta;
 } __attribute__((packed)) Generic_ADCS_GNC_Tlm_Payload_t;
 
 typedef struct

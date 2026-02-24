@@ -69,10 +69,14 @@ void MxM(double A[3][3], double B[3][3], double C[3][3]);
 void MxV (double M[3][3], double V[3], double W[3]);
 void MINV3(double A[3][3], double B[3][3]);
 
+void SimpRot(double AXIS[3], double THETA, double C[3][3]);
+
 void Q2C(double Q[4], double C[3][3]);
 void QW2QDOT(double Q[4],double W[3],double QDOT[4]);
 
 void Matrix3x3f_MultVec (Vector3f *Result, const Matrix3x3f *Left, const Vector3f *Right);
+
+void HiFiEarthPrecNute(double JD, double C_TETE_J2000[3][3]);
 
 double GpsTime_TO_JD(long GpsRollover, long GpsWeek, double GpsSecond);
 double JD_TO_GMST(double JD);

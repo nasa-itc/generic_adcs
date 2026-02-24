@@ -1,5 +1,11 @@
 !!!!!!!!!!!!!!! EPH  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-8                                         ! input for IGRF = nmax = max order/degree
+2451545.0                                 ! Inputs for Solar Ephemeris = date_epoch = Reference Julian Day
+357.5291092     0.9856002831              ! Inputs for Solar Ephemeris = G_coeff
+280.46          0.9856473922              ! Inputs for Solar Ephemeris = L_coeff
+1.914666471     0.019994643               ! Inputs for Solar Ephemeris = coeff_long
+0.91748                                   ! Inputs for Solar Ephemeris = cos_obliq_eclp = cos(23.4)
+0.39779                                   ! Inputs for Solar Ephemeris = sin_obliq_eclp = sin(23.4)
+8                                         ! Input for IGRF = nmax = max order/degree
 !!!!!!!!!!!!!!! AD  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.0                                       ! Filter coefficient for IMU wbn data
 1                                         ! enable_filter - 1 = apply moving average filter, 0 = do not apply moving average filter)

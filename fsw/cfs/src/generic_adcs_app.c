@@ -235,7 +235,7 @@ static int32 Generic_ADCS_AppInit(void)
         return OS_ERROR;
     }
     Generic_ADCS_init_attitude_determination_and_attitude_control(adcs_in, 
-                                                                  &Generic_ADCS_AppData.EPHPacket.Payload.bfld,
+                                                                  &Generic_ADCS_AppData.EPHPacket.Payload,
                                                                   &Generic_ADCS_AppData.ADPacket.Payload,
                                                                   &Generic_ADCS_AppData.GNCPacket.Payload,
                                                                   &Generic_ADCS_AppData.ACSPacket.Payload);
@@ -372,7 +372,7 @@ static void Generic_ADCS_ProcessCommandPacket(void)
 
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control(
-                &Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.EPHPacket.Payload.bfld, &Generic_ADCS_AppData.ADPacket.Payload,
+                &Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.EPHPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload,
                 &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
             Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload,
                                              &Generic_ADCS_AppData.DOPacket.Payload, &Generic_ADCS_AppData.MtbPctOnCmd,
