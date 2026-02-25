@@ -7,35 +7,35 @@
 #define _GENERIC_ADCS_UTILITIES_H_
 
 #ifndef EPS16
-   #define EPS16 (1.0E-16)
+#define EPS16 (1.0E-16)
 #endif
 #ifndef EPS32
-   #define EPS32 (1.0E-32)
+#define EPS32 (1.0E-32)
 #endif
 #ifndef TWOPI
-   #define TWOPI (6.283185307179586)
+#define TWOPI (6.283185307179586)
 #endif
 #ifndef D2R
-   #define D2R (1.74532925199433E-2)
+#define D2R (1.74532925199433E-2)
 #endif
 #ifndef RE
-   #define RE (6378137.0)
+#define RE (6378137.0)
 #endif
 #ifndef NANO2TSLA
-   #define NANO2TSLA (1.0E-9)  /* nano to Tesla */
+#define NANO2TSLA (1.0E-9) /* nano to Tesla */
 #endif
 #ifndef M2KM
-   #define M2KM (0.001)
+#define M2KM (0.001)
 #endif
 
-typedef struct 
+typedef struct
 {
-  float      Comp[3];
+    float Comp[3];
 } Vector3f;
 
 typedef struct
 {
-  float      Comp[3][3];
+    float Comp[3][3];
 } Matrix3x3f;
 
 double arccos(double x);
@@ -66,21 +66,20 @@ void M63xV3(double A[6][3], double B[3], double C[6]);
 void M44XV4(double M[4][4], double v[4], double output[4]);
 
 void MxM(double A[3][3], double B[3][3], double C[3][3]);
-void MxV (double M[3][3], double V[3], double W[3]);
+void MxV(double M[3][3], double V[3], double W[3]);
 void MINV3(double A[3][3], double B[3][3]);
 
 void SimpRot(double AXIS[3], double THETA, double C[3][3]);
 
 void Q2C(double Q[4], double C[3][3]);
-void QW2QDOT(double Q[4],double W[3],double QDOT[4]);
+void QW2QDOT(double Q[4], double W[3], double QDOT[4]);
 
-void Matrix3x3f_MultVec (Vector3f *Result, const Matrix3x3f *Left, const Vector3f *Right);
+void Matrix3x3f_MultVec(Vector3f *Result, const Matrix3x3f *Left, const Vector3f *Right);
 
 void HiFiEarthPrecNute(double JD, double C_TETE_J2000[3][3]);
 
 double GpsTime_TO_JD(long GpsRollover, long GpsWeek, double GpsSecond);
 double JD_TO_GMST(double JD);
 double GpsDateToGpsTime(long GpsRollover, long GpsWeek, double GpsSecond);
-void TimeToDate(double Time, long *Year, long *Month, long *Day,
-                long *Hour, long *Minute, double *Second, double LSB);
+void TimeToDate(double Time, long *Year, long *Month, long *Day, long *Hour, long *Minute, double *Second, double LSB);
 #endif

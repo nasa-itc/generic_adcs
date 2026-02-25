@@ -190,16 +190,16 @@ void Generic_ADCS_ingest_novatel_gps(CFE_MSG_Message_t *Msg, Generic_ADCS_DI_Gps
 {
     NOVATEL_OEM615_Device_tlm_t *gps = (NOVATEL_OEM615_Device_tlm_t *)Msg;
 
-    Gps->Weeks = gps->Novatel_oem615.Weeks;
+    Gps->Weeks           = gps->Novatel_oem615.Weeks;
     Gps->SecondsIntoWeek = gps->Novatel_oem615.SecondsIntoWeek;
-    Gps->Fractions = gps->Novatel_oem615.Fractions;
-    Gps->ECEFX = gps->Novatel_oem615.ECEFX;
-    Gps->ECEFY = gps->Novatel_oem615.ECEFY;
-    Gps->ECEFZ = gps->Novatel_oem615.ECEFZ;
-    Gps->VelX = gps->Novatel_oem615.VelX;
-    Gps->VelY = gps->Novatel_oem615.VelY;
-    Gps->VelZ = gps->Novatel_oem615.VelZ;
-    Gps->lat = gps->Novatel_oem615.lat;
-    Gps->lon = gps->Novatel_oem615.lon;
-    Gps->alt = gps->Novatel_oem615.alt;
+    Gps->Fractions       = gps->Novatel_oem615.Fractions;
+    Gps->ECEFX           = gps->Novatel_oem615.ECEFX;
+    Gps->ECEFY           = gps->Novatel_oem615.ECEFY;
+    Gps->ECEFZ           = gps->Novatel_oem615.ECEFZ;
+    Gps->VelX            = gps->Novatel_oem615.VelX;
+    Gps->VelY            = gps->Novatel_oem615.VelY;
+    Gps->VelZ            = gps->Novatel_oem615.VelZ;
+    Gps->lat             = gps->Novatel_oem615.lat;
+    Gps->lon             = gps->Novatel_oem615.lon;
+    Gps->alt             = gps->Novatel_oem615.alt;
 }
