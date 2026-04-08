@@ -55,20 +55,20 @@ typedef struct
 */
 typedef struct
 {
-   double date_epoch;
-   double coeff_G1;
-   double coeff_G2;
-   double coeff_L1;
-   double coeff_l2;
-   double coeff_long1;
-   double coeff_long2;
-   double cos_obliq_eclp;
-   double sin_obliq_eclp;
+    double date_epoch;
+    double coeff_G1;
+    double coeff_G2;
+    double coeff_L1;
+    double coeff_l2;
+    double coeff_long1;
+    double coeff_long2;
+    double cos_obliq_eclp;
+    double sin_obliq_eclp;
 } Generic_ADCS_EPH_Sol_Tlm_Payload_t;
 
-typedef struct 
+typedef struct
 {
-   int nmax;
+    int nmax;
 } Generic_ADCS_EPH_Mag_Tlm_Payload_t;
 
 typedef struct
@@ -174,7 +174,7 @@ typedef struct
 */
 typedef struct
 {
-    double bvb[3];
+    double    bvb[3];
     __uint8_t MagValid;
 } Generic_ADCS_AD_Mag_Tlm_Payload_t;
 
@@ -217,54 +217,54 @@ typedef struct
     double   alt;
 } Generic_ADCS_AD_Gps_Tlm_Payload_t;
 
-typedef struct 
+typedef struct
 {
-   __uint8_t Valid;
-   __uint8_t enable_filter;    /*Flag to enable/disable Moving Average filter*/
-   __uint8_t SolInit;
-   __uint8_t MagInit;
-   double wbn[3];
-   double ws[3];   /*(rad/s) Estimated angular rate from Sun Vector*/
-   double wm[3];    /*(rad/s) Estimated angular rate from Mag Vector*/
-   double svb_prev[3];  /*sol.svb at prevous time*/
-   double bvb_prev[3];  /*mag.bvb unit at last time step*/
-   int32_t  sample_size;    /*Number of samples used in moving average filter*/
+    __uint8_t Valid;
+    __uint8_t enable_filter; /*Flag to enable/disable Moving Average filter*/
+    __uint8_t SolInit;
+    __uint8_t MagInit;
+    double    wbn[3];
+    double    ws[3];       /*(rad/s) Estimated angular rate from Sun Vector*/
+    double    wm[3];       /*(rad/s) Estimated angular rate from Mag Vector*/
+    double    svb_prev[3]; /*sol.svb at prevous time*/
+    double    bvb_prev[3]; /*mag.bvb unit at last time step*/
+    int32_t   sample_size; /*Number of samples used in moving average filter*/
 } Generic_AD_rateEst_Tlm_Payload_t;
-
-typedef struct 
-{
-   long init;          /* Initialization marker */
-   double dt;          /* rate at which dynamics propogated */
-   double eye3[3][3];
-   double sig_u;
-   double sig_v;
-   double sig_mag;
-   double sig_sun;
-   double sig_star;
-   double bias_est[3];
-   double qk_est[4];
-   double Pk[6][6];
-   double Qk[6][6];
-   double Gt[6][6];
-   double Hk[3][6];
-   double delta_xk_est[6];
-   double ek_ST_bound;
-   double ek_FSS_bound;
-   double ek_MG_bound;
-   double wbn[3];
-   double qbn[4];
-   int AKFvalid;
-   double Mag_range;
-   double Dvg_tol;
-   int reset_flag;
- } Generic_ADCS_AD_murAKF_Tlm_Payload_t;
 
 typedef struct
 {
-    Generic_ADCS_AD_Mag_Tlm_Payload_t Mag;
-    Generic_ADCS_AD_Sol_Tlm_Payload_t Sol;
-    Generic_ADCS_AD_Imu_Tlm_Payload_t Imu;
-    Generic_ADCS_AD_ST_Tlm_Payload_t  ST;
+    long   init; /* Initialization marker */
+    double dt;   /* rate at which dynamics propogated */
+    double eye3[3][3];
+    double sig_u;
+    double sig_v;
+    double sig_mag;
+    double sig_sun;
+    double sig_star;
+    double bias_est[3];
+    double qk_est[4];
+    double Pk[6][6];
+    double Qk[6][6];
+    double Gt[6][6];
+    double Hk[3][6];
+    double delta_xk_est[6];
+    double ek_ST_bound;
+    double ek_FSS_bound;
+    double ek_MG_bound;
+    double wbn[3];
+    double qbn[4];
+    int    AKFvalid;
+    double Mag_range;
+    double Dvg_tol;
+    int    reset_flag;
+} Generic_ADCS_AD_murAKF_Tlm_Payload_t;
+
+typedef struct
+{
+    Generic_ADCS_AD_Mag_Tlm_Payload_t    Mag;
+    Generic_ADCS_AD_Sol_Tlm_Payload_t    Sol;
+    Generic_ADCS_AD_Imu_Tlm_Payload_t    Imu;
+    Generic_ADCS_AD_ST_Tlm_Payload_t     ST;
     Generic_ADCS_AD_Gps_Tlm_Payload_t    Gps;
     Generic_AD_rateEst_Tlm_Payload_t     RateEst;
     Generic_ADCS_AD_murAKF_Tlm_Payload_t AKF;

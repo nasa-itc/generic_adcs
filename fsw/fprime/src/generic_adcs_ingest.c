@@ -178,18 +178,20 @@ void Generic_ADCS_ingest_generic_st(double Q0, double Q1, double Q2, double Q3, 
     QxQ(q, St->qbs, St->q);
 }
 
-void Generic_ADCS_ingest_novatel_gps(uint16_t Weeks, uint32_t SecondsIntoWeek, double Fractions, double ECEFX, double ECEFY, double ECEFZ, double VelX, double VelY, double VelZ, double lat, double lon, double alt, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps)
+void Generic_ADCS_ingest_novatel_gps(uint16_t Weeks, uint32_t SecondsIntoWeek, double Fractions, double ECEFX,
+                                     double ECEFY, double ECEFZ, double VelX, double VelY, double VelZ, double lat,
+                                     double lon, double alt, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps)
 {
-    Gps->Weeks = Weeks;
+    Gps->Weeks           = Weeks;
     Gps->SecondsIntoWeek = SecondsIntoWeek;
-    Gps->Fractions = Fractions;
-    Gps->ECEFX = ECEFX;
-    Gps->ECEFY = ECEFY;
-    Gps->ECEFZ = ECEFZ;
-    Gps->VelX = VelX;
-    Gps->VelY = VelY;
-    Gps->VelZ = VelZ;
-    Gps->lat = lat;
-    Gps->lon = lon;
-    Gps->alt = alt;
+    Gps->Fractions       = Fractions;
+    Gps->ECEFX           = ECEFX;
+    Gps->ECEFY           = ECEFY;
+    Gps->ECEFZ           = ECEFZ;
+    Gps->VelX            = VelX;
+    Gps->VelY            = VelY;
+    Gps->VelZ            = VelZ;
+    Gps->lat             = lat;
+    Gps->lon             = lon;
+    Gps->alt             = alt;
 }
