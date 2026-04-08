@@ -75,6 +75,12 @@ namespace Components {
     // this->tlmWrite_ingestSTCount(++ingestSTCount);
   }
 
+  void Generic_adcs :: GPSin_handler( FwIndexType portNum,I16 Weeks, U32 SecondsIntoWeek, F64 Fractions, F64 ECEFX, F64 ECEFY, F64 ECEFZ, F64 VelX, F64 VelY, F64 VelZ, F64 lat, F64 lon, F64 alt)
+  {
+    Generic_ADCS_ingest_novatel_gps(Weeks, SecondsIntoWeek, Fractions, ECEFX, ECEFY, ECEFZ, VelX, VelY, VelZ, lat, lon, alt, &DIPacket.Payload.Gps);
+    // this->tlmWrite_ingestSTCount(++ingestGPSCount);
+  }
+
   void Generic_adcs :: updateData_handler(const FwIndexType portNum, U32 context)
   {
     Generic_ADCS_execute_attitude_determination_and_attitude_control(&DIPacket.Payload, &EPHPacket.Payload, &ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);

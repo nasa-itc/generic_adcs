@@ -51,6 +51,7 @@ namespace Components {
     U32 ingestCSSCount = 0;
     U32 ingestRWCount = 0;
     U32 ingestSTCount = 0;
+    U32 ingestGPSCount = 0;
     U32 ingestPASSIVE = 0;
     U32 ingestSUNSAFE = 0;
     U32 ingestINERTIAL = 0;
@@ -127,6 +128,22 @@ namespace Components {
         F64 Q2,
         F64 Q3,
         U8 IsValid
+      ) override;
+
+      void GPSin_handler(
+        FwIndexType portNum,
+        I16 Weeks,
+        U32 SecondsIntoWeek,
+        F64 Fractions,
+        F64 ECEFX,
+        F64 ECEFY,
+        F64 ECEFZ,
+        F64 VelX,
+        F64 VelY,
+        F64 VelZ,
+        F64 lat,
+        F64 lon,
+        F64 alt
       ) override;
 
       void updateData_handler(
