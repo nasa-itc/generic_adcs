@@ -5,12 +5,13 @@
 **
 *******************************************************************************/
 
+#include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 #include "generic_adcs_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_adac.h"
-#include <stdbool.h>
 
 static int     igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS,
                     Generic_ADCS_GNC_Tlm_Payload_t *GNC);

@@ -36,6 +36,7 @@ namespace Components {
     public:
 
     Generic_ADCS_Hk_tlm_t  HkTelemetryPkt; /* GENERIC_ADCS Housekeeping Telemetry Packet */
+    Generic_ADCS_EPH_Tlm_t EPHPacket;
     Generic_ADCS_DI_Tlm_t  DIPacket;
     Generic_ADCS_AD_Tlm_t  ADPacket;
     Generic_ADCS_GNC_Tlm_t GNCPacket;
@@ -172,9 +173,10 @@ namespace Components {
       //refactor everything below eventually
 
       void ingest_init(Generic_ADCS_DI_Tlm_Payload_t *DI);
-      void init_adac(Generic_ADCS_AD_Tlm_Payload_t *AD,
-                          Generic_ADCS_GNC_Tlm_Payload_t *GNC,
-                          Generic_ADCS_AC_Tlm_Payload_t  *ACS);
+      void init_adac(Generic_ADCS_EPH_Tlm_Payload_t *EPH,
+                     Generic_ADCS_AD_Tlm_Payload_t *AD,
+                     Generic_ADCS_GNC_Tlm_Payload_t *GNC,
+                     Generic_ADCS_AC_Tlm_Payload_t  *ACS);
       
       void init_output(Generic_ADCS_DO_Tlm_Payload_t *DO);
 

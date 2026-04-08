@@ -22,7 +22,7 @@ namespace Components {
       Generic_adcsComponentBase(compName)
   {
     ingest_init(&DIPacket.Payload);
-    init_adac(&ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
+    init_adac(&EPHPacket.Payload, &ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
     init_output(&DOPacket.Payload);
     
     HkTelemetryPkt.CommandCount = 0;
@@ -77,7 +77,7 @@ namespace Components {
 
   void Generic_adcs :: updateData_handler(const FwIndexType portNum, U32 context)
   {
-    Generic_ADCS_execute_attitude_determination_and_attitude_control(&DIPacket.Payload, &ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
+    Generic_ADCS_execute_attitude_determination_and_attitude_control(&DIPacket.Payload, &EPHPacket.Payload, &ADPacket.Payload, &GNCPacket.Payload, &ACSPacket.Payload);
     output_actuators(&GNCPacket.Payload, &DOPacket.Payload, &MtbPctOnCmd, &RwCmd);
   }
 
@@ -294,11 +294,182 @@ namespace Components {
     DI->St.qbs[3] = 1.0;
   }
 
-  void Generic_adcs :: init_adac(Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t  *ACS)
+  void Generic_adcs :: init_adac(Generic_ADCS_EPH_Tlm_Payload_t *EPH, Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Tlm_Payload_t  *ACS)
   {
     //Hardcode instead of reading from the cfg
 
+    EPH->Sol.date_epoch = 2451545.0;
+    EPH->Sol.coeff_G1 = 357.5291092;
+    EPH->Sol.coeff_G2 = 0.9856002831;
+    EPH->Sol.coeff_L1 = 280.46;
+    EPH->Sol.coeff_l2 = 0.9856473922;
+    EPH->Sol.coeff_long1 = 1.914666471;
+    EPH->Sol.coeff_long2 = 0.019994643;
+    EPH->Sol.cos_obliq_eclp = 0.91748;
+    EPH->Sol.sin_obliq_eclp = 0.39779;
+    EPH->bfld.nmax = 8;
+
     AD->Imu.alpha = 0.0;
+    AD->RateEst.enable_filter = 1;
+    AD->RateEst.sample_size = 40;
+    AD->RateEst.Valid = false;
+    AD->RateEst.MagInit = false;
+    AD->RateEst.SolInit = false;
+    for (int i = 0; i < 3; i++) {
+        AD->RateEst.wbn[i] = 0.0;
+        AD->RateEst.ws[i] = 0.0;
+        AD->RateEst.wm[i] = 0.0;
+        AD->RateEst.svb_prev[i] = 0.0;
+        AD->RateEst.bvb_prev[i] = 0.0;
+    }
+    int i,j;
+    double param[10] = {0,0,0,0,0,0,0,0,0,0};
+
+    AD->AKF.init = 1;
+    AD->AKF.dt   = GNC->DT;
+    AD->AKF.AKFvalid = 0;
+    AD->AKF.reset_flag = 0;
+
+    /* Initialize qbn */
+    AD->AKF.qbn[0] = 0.0;
+    AD->AKF.qbn[1] = 0.0;
+    AD->AKF.qbn[2] = 0.0;
+    AD->AKF.qbn[3] = 1.0;
+
+    /* Initialize wbn */
+    AD->AKF.wbn[0] = 0.0;
+    AD->AKF.wbn[1] = 0.0;
+    AD->AKF.wbn[2] = 0.0;
+
+    AD->AKF.qk_est[0] = 0.0;
+    AD->AKF.qk_est[1] = 0.0;
+    AD->AKF.qk_est[2] = 0.0;
+    AD->AKF.qk_est[3] = 1.0;
+    for(i = 0; i < 6; i++) {
+        AD->AKF.delta_xk_est[i] = 0.0;
+    }
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 6; j++) {
+            if(j < 3) {
+                if (i == j ) {
+                AD->AKF.Hk[i][j] = 1.0;
+                }
+                else{
+                AD->AKF.Hk[i][j] = 0.0;
+                }
+            }
+            else{
+                AD->AKF.Hk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Define the identity matrix */
+    for(i = 0; i < 3; i++) {
+        for(j = 0; j < 3; j++) {
+            if (i == j ) {
+                AD->AKF.eye3[i][j] = 1.0;
+            }
+            else{
+                AD->AKF.eye3[i][j] = 0.0;
+            }
+        }
+    }
+
+    AD->AKF.sig_u = 4.59934839e-8;
+    AD->AKF.sig_v = 6.571167e-5;
+    AD->AKF.ek_ST_bound = 0.5;
+    AD->AKF.ek_FSS_bound = 1.0e-1;
+    AD->AKF.ek_FSS_bound *= D2R;
+    AD->AKF.ek_MG_bound = 1.0e-4;
+    AD->AKF.Mag_range = 1.0e-12;
+    AD->AKF.Dvg_tol = 1.0e-4;
+    param[0] = 1.0e-6;
+    param[1] = 1.0e-12;
+
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i == j ) {
+                if (i < 3) {
+                AD->AKF.Pk[i][j] = param[0];
+                }
+                else {
+                AD->AKF.Pk[i][j] = param[1];
+                }
+            }
+            else {
+                AD->AKF.Pk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Initialize the discrete process noise covariance Qk */
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i < 3 && j < 3) {
+                if (i == j) {
+                AD->AKF.Qk[i][j] = AD->AKF.sig_v*AD->AKF.sig_v*AD->AKF.dt+(1.0/3.0)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i < 3 && j >= 3) {
+                if (i == j-3) {
+                AD->AKF.Qk[i][j] = -(0.5)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j < 3) {
+                if (i-3 == j) {
+                AD->AKF.Qk[i][j] = -(0.5)*AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j >= 3) {
+                if (i == j) {
+                AD->AKF.Qk[i][j] = AD->AKF.sig_u*AD->AKF.sig_u*AD->AKF.dt;
+                }
+                else {
+                AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 6; i++) {
+        for (j = 0; j < 6; j++) {
+            if (i == j ) {
+                if (i < 3) {
+                AD->AKF.Gt[i][j] = -1.0;
+                }
+                else {
+                AD->AKF.Gt[i][j] = 1.0;
+                }
+            }
+            else {
+                AD->AKF.Gt[i][j] = 0.0;
+            }
+        }
+    }
+
+    param[0] = 1.0e-2;
+    param[1] = 0.005;
+    param[2] = 0.000581776;
+    AD->AKF.sig_mag = param[0];
+    AD->AKF.sig_sun = param[1];
+    AD->AKF.sig_star = param[2];
+
+    param[0] = 0.0;
+    param[1] = 0.0;
+    param[2] = 0.0;
+    AD->AKF.bias_est[0] = param[0];
+    AD->AKF.bias_est[1] = param[1];
+    AD->AKF.bias_est[2] = param[2];
 
     GNC->DT = 0.1;
     GNC->MaxMcmd = 1.42;
@@ -330,6 +501,7 @@ namespace Components {
     ACS->Inertial.qbn_cmd[1] = 0.5;
     ACS->Inertial.qbn_cmd[2] = 0.5;
     ACS->Inertial.qbn_cmd[3] = 0.5;
+    ACS->Inertial.phiErr_max = 10.0;
 
     ACS->Inertial.Kp[0] = 0.04;
     ACS->Inertial.Kp[1] = 0.04;
