@@ -19,8 +19,8 @@ void Generic_ADCS_ingest_generic_imu(float LinX, float LinY, float LinZ, float A
 void Generic_ADCS_ingest_generic_rw(double RW0, double RW1, double RW2, Generic_ADCS_DI_Rw_Tlm_Payload_t *Rw);
 void Generic_ADCS_ingest_generic_st(double Q0, double Q1, double Q2, double Q3, __uint8_t IsValid,
                                     Generic_ADCS_DI_St_Tlm_Payload_t *St);
-void Generic_ADCS_ingest_novatel_gps(uint16_t Weeks, uint32_t SecondsIntoWeek, double Fractions, double ECEFX, double ECEFY, 
-                                    double ECEFZ, double VelX, double VelY, double VelZ, double lat, double lon, double alt, 
-                                    Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps);
+void Generic_ADCS_ingest_novatel_gps(uint16_t Weeks, uint32_t SecondsIntoWeek, double Fractions, double ECEFX,
+                                     double ECEFY, double ECEFZ, double VelX, double VelY, double VelZ, double lat,
+                                     double lon, double alt, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps);
 
 #endif
