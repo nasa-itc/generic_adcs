@@ -1,5 +1,25 @@
+!!!!!!!!!!!!!!! EPH  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+2451545.0                                 ! Inputs for Solar Ephemeris = date_epoch = Reference Julian Day
+357.5291092     0.9856002831              ! Inputs for Solar Ephemeris = G_coeff
+280.46          0.9856473922              ! Inputs for Solar Ephemeris = L_coeff
+1.914666471     0.019994643               ! Inputs for Solar Ephemeris = coeff_long
+0.91748                                   ! Inputs for Solar Ephemeris = cos_obliq_eclp = cos(23.4)
+0.39779                                   ! Inputs for Solar Ephemeris = sin_obliq_eclp = sin(23.4)
+8                                         ! Input for IGRF = nmax = max order/degree
 !!!!!!!!!!!!!!! AD  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-0.0                                       ! Filter coefficient for IMU wbn data
+0.0                                       ! Low Pass Filter = Filter coefficient for IMU wbn data
+1                                         ! Inputs for Rate Estimator = enable_filter - 1 = apply moving average filter, 0 = do not apply moving average filter)
+40                                        ! Inputs for Rate Estimator = sample_size - Number of Samples to be used in moving average filter (MAX = 100)
+4.59934839e-8                             ! Inputs for Mur-AKF = sig_u = variance associated to gyro drift, from datasheet
+6.571167e-5                               ! Inputs for Mur-AKF = sig_v = variance associated with random drift, from datasheet
+0.5                                       ! Inputs for Mur-AKF = ek_ST_bound = ST residual bound in degrees
+1.0e-1                                    ! Inputs for Mur-AKF = ek_FSS_bound = FSS residual bound
+1.0e-4                                    ! Inputs for Mur-AKF = ek_MG_bound = Mag residual bound in Tesla
+1.0e-12                                   ! Inputs for Mur-AKF = Mag_range = Mag Validity in Tesla
+1.0e-4                                    ! Inputs for Mur-AKF = Dvg_tol = Mag Validity in Tesla
+1.0e-6   1.0e-12                          ! Inputs for Mur-AKF = cov_init = Elements of top half and bottom right diagonals
+1.0e-2    0.005   0.000581776             ! Inputs for Mur-AKF = sensor_noise_init = (sig-mag, sig-sun, sig-star) Initial diagonal terms of covariance matrix
+0.0   0.0  0.0                            ! Inputs for Mur-AKF = bias_init = Initial bias associated with gyro drift
 !!!!!!!!!!!!!!! GNC !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 0.1                                       ! DT (seconds)
 1.42                                      ! Magtorquer saturation (A-m^2)

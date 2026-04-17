@@ -24,6 +24,7 @@
 #include "generic_torquer_msgids.h"
 #include "generic_reaction_wheel_msgids.h"
 #include "generic_star_tracker_msgids.h"
+#include "novatel_oem615_msgids.h"
 
 /*
 ** Global Data
@@ -233,9 +234,9 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_EVS_SendEvent(GENERIC_ADCS_FOPEN_ERR_EID, CFE_EVS_EventType_ERROR, "Error opening cf/Inp_ADAC.txt");
         return OS_ERROR;
     }
-    Generic_ADCS_init_attitude_determination_and_attitude_control(adcs_in, &Generic_ADCS_AppData.ADPacket.Payload,
-                                                                  &Generic_ADCS_AppData.GNCPacket.Payload,
-                                                                  &Generic_ADCS_AppData.ACSPacket.Payload);
+    Generic_ADCS_init_attitude_determination_and_attitude_control(
+        adcs_in, &Generic_ADCS_AppData.EPHPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload,
+        &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
     fclose(adcs_in);
 
     adcs_in = fopen("cf/Inp_DO.txt", "r");
@@ -291,6 +292,13 @@ static int32 Generic_ADCS_AppInit(void)
         CFE_ES_WriteToSysLog(
             "Generic_ADCS App: Error Subscribing to GENERIC_STAR_TRACKER_DEVICE_TLM_MID, RC = 0x%08lX\n",
             (unsigned long)status);
+        return (status);
+    }
+    status = CFE_SB_Subscribe(CFE_SB_ValueToMsgId(NOVATEL_OEM615_DEVICE_TLM_MID), Generic_ADCS_AppData.CmdPipe);
+    if (status != CFE_SUCCESS)
+    {
+        CFE_ES_WriteToSysLog("Generic_ADCS App: Error Subscribing to NOVATEL_OEM615_DEVICE_TLM_MID, RC = 0x%08lX\n",
+                             (unsigned long)status);
         return (status);
     }
 
@@ -355,10 +363,15 @@ static void Generic_ADCS_ProcessCommandPacket(void)
             Generic_ADCS_ingest_generic_st(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.St);
             break;
 
+        case NOVATEL_OEM615_DEVICE_TLM_MID:
+            Generic_ADCS_ingest_novatel_gps(Generic_ADCS_AppData.MsgPtr, &Generic_ADCS_AppData.DIPacket.Payload.Gps);
+            break;
+
         case GENERIC_ADCS_ADAC_UPDATE_MID:
             Generic_ADCS_execute_attitude_determination_and_attitude_control(
-                &Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.ADPacket.Payload,
-                &Generic_ADCS_AppData.GNCPacket.Payload, &Generic_ADCS_AppData.ACSPacket.Payload);
+                &Generic_ADCS_AppData.DIPacket.Payload, &Generic_ADCS_AppData.EPHPacket.Payload,
+                &Generic_ADCS_AppData.ADPacket.Payload, &Generic_ADCS_AppData.GNCPacket.Payload,
+                &Generic_ADCS_AppData.ACSPacket.Payload);
             Generic_ADCS_output_to_actuators(&Generic_ADCS_AppData.GNCPacket.Payload,
                                              &Generic_ADCS_AppData.DOPacket.Payload, &Generic_ADCS_AppData.MtbPctOnCmd,
                                              &Generic_ADCS_AppData.RwCmd);

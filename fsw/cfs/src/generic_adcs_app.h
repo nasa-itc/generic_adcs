@@ -32,6 +32,7 @@ typedef struct
     ** Each app defines its own packet which contains its OWN telemetry
     */
     Generic_ADCS_Hk_tlm_t  HkTelemetryPkt; /* GENERIC_ADCS Housekeeping Telemetry Packet */
+    Generic_ADCS_EPH_Tlm_t EPHPacket;
     Generic_ADCS_DI_Tlm_t  DIPacket;
     Generic_ADCS_AD_Tlm_t  ADPacket;
     Generic_ADCS_GNC_Tlm_t GNCPacket;
