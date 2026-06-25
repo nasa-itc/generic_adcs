@@ -5,34 +5,264 @@
 **
 *******************************************************************************/
 
+#include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 #include "generic_adcs_msg.h"
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_adac.h"
-#include <stdbool.h>
 
-static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
-static void AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
-static void AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
-                   Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
-static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_Mag);
-static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
-static void AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
-static void AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
-static void AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS);
-static void AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
-static void AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static int     igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS,
+                    Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static int32_t solar_ephemeris(Generic_ADCS_EPH_Sol_Tlm_Payload_t *sol, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS,
+                               Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static void    AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU);
+static void    AD_mag(const Generic_ADCS_DI_Mag_Tlm_Payload_t *DI_Mag, Generic_ADCS_AD_Mag_Tlm_Payload_t *AD_Mag);
+static void    AD_sol(const Generic_ADCS_DI_Fss_Tlm_Payload_t *DI_FSS, const Generic_ADCS_DI_Css_Tlm_Payload_t *DI_CSS,
+                      Generic_ADCS_AD_Sol_Tlm_Payload_t *AD_Sol);
+static void    AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD_ST_Tlm_Payload_t *AD_Mag);
+static void    AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_AD_Gps_Tlm_Payload_t *gps);
+static void    AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag,
+                          Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD);
+static void    calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD);
+static void    calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD);
+static void    AD_murAKF(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AD_ST_Tlm_Payload_t st,
+                         Generic_ADCS_AD_Imu_Tlm_Payload_t imu, Generic_ADCS_AD_Mag_Tlm_Payload_t mag,
+                         Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_ADCS_AD_murAKF_Tlm_Payload_t *AKF);
+static void    AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static void    AC_bdot(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Bdot_Tlm_t *AC_bdot);
+static void    AC_sunsafe(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Sunsafe_Tlm_t *ACS);
+static void    AC_inertial(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AC_Inertial_Tlm_t *ACS);
+static void    AC_h_mgmt(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
+static void    AC_rw_momentum_dump(Generic_ADCS_GNC_Tlm_Payload_t *GNC);
 
-void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_AD_Tlm_Payload_t *AD,
+void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Generic_ADCS_EPH_Tlm_Payload_t *EPH,
+                                                                   Generic_ADCS_AD_Tlm_Payload_t  *AD,
                                                                    Generic_ADCS_GNC_Tlm_Payload_t *GNC,
                                                                    Generic_ADCS_AC_Tlm_Payload_t  *ACS)
 {
     char junk[512], newline;
+    // EPH
+    fscanf(in, "%[^\n]%[\n]", junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.date_epoch, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_G1, &EPH->Sol.coeff_G2, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_L1, &EPH->Sol.coeff_l2, junk, &newline);
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &EPH->Sol.coeff_long1, &EPH->Sol.coeff_long2, junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.cos_obliq_eclp, junk, &newline);
+    fscanf(in, "%lf%[^\n]%[\n]", &EPH->Sol.sin_obliq_eclp, junk, &newline);
+    fscanf(in, "%d%[^\n]%[\n]", &EPH->bfld.nmax, junk, &newline);
     // AD
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &AD->Imu.alpha, junk, &newline);
     AD->Imu.init = 0;
+    fscanf(in, "%hhu%[^\n]%[\n]", &AD->RateEst.enable_filter, junk, &newline);
+    fscanf(in, "%d%[^\n]%[\n]", &AD->RateEst.sample_size, junk, &newline);
+    AD->RateEst.Valid   = false;
+    AD->RateEst.MagInit = false;
+    AD->RateEst.SolInit = false;
+    for (int i = 0; i < 3; i++)
+    {
+        AD->RateEst.wbn[i]      = 0.0;
+        AD->RateEst.ws[i]       = 0.0;
+        AD->RateEst.wm[i]       = 0.0;
+        AD->RateEst.svb_prev[i] = 0.0;
+        AD->RateEst.bvb_prev[i] = 0.0;
+    }
+    int    i, j;
+    double param[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    AD->AKF.init       = 1;
+    AD->AKF.dt         = GNC->DT;
+    AD->AKF.AKFvalid   = 0;
+    AD->AKF.reset_flag = 0;
+
+    /* Initialize qbn */
+    AD->AKF.qbn[0] = 0.0;
+    AD->AKF.qbn[1] = 0.0;
+    AD->AKF.qbn[2] = 0.0;
+    AD->AKF.qbn[3] = 1.0;
+
+    /* Initialize wbn */
+    AD->AKF.wbn[0] = 0.0;
+    AD->AKF.wbn[1] = 0.0;
+    AD->AKF.wbn[2] = 0.0;
+
+    AD->AKF.qk_est[0] = 0.0;
+    AD->AKF.qk_est[1] = 0.0;
+    AD->AKF.qk_est[2] = 0.0;
+    AD->AKF.qk_est[3] = 1.0;
+    for (i = 0; i < 6; i++)
+    {
+        AD->AKF.delta_xk_est[i] = 0.0;
+    }
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 6; j++)
+        {
+            if (j < 3)
+            {
+                if (i == j)
+                {
+                    AD->AKF.Hk[i][j] = 1.0;
+                }
+                else
+                {
+                    AD->AKF.Hk[i][j] = 0.0;
+                }
+            }
+            else
+            {
+                AD->AKF.Hk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Define the identity matrix */
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            if (i == j)
+            {
+                AD->AKF.eye3[i][j] = 1.0;
+            }
+            else
+            {
+                AD->AKF.eye3[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Initialize constants */
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.sig_u, junk,
+           &newline); /* variance associated to gyro drift, from datasheet */
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.sig_v, junk,
+           &newline); /* variance associated with random drift, from datasheet */
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_ST_bound, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_FSS_bound, junk, &newline);
+    AD->AKF.ek_FSS_bound *= D2R;
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.ek_MG_bound, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.Mag_range, junk, &newline);
+
+    fscanf(in, "%lf%[^\n]%[\n]", &AD->AKF.Dvg_tol, junk, &newline);
+
+    /* Initialize the covariance matrix Pk */
+    fscanf(in, "%lf %lf%[^\n]%[\n]", &param[0], &param[1], junk, &newline);
+    for (i = 0; i < 6; i++)
+    {
+        for (j = 0; j < 6; j++)
+        {
+            if (i == j)
+            {
+                if (i < 3)
+                {
+                    AD->AKF.Pk[i][j] = param[0];
+                }
+                else
+                {
+                    AD->AKF.Pk[i][j] = param[1];
+                }
+            }
+            else
+            {
+                AD->AKF.Pk[i][j] = 0.0;
+            }
+        }
+    }
+
+    /* Initialize the discrete process noise covariance Qk */
+    for (i = 0; i < 6; i++)
+    {
+        for (j = 0; j < 6; j++)
+        {
+            if (i < 3 && j < 3)
+            {
+                if (i == j)
+                {
+                    AD->AKF.Qk[i][j] = AD->AKF.sig_v * AD->AKF.sig_v * AD->AKF.dt + (1.0 / 3.0) * AD->AKF.sig_u *
+                                                                                        AD->AKF.sig_u * AD->AKF.dt *
+                                                                                        AD->AKF.dt * AD->AKF.dt;
+                }
+                else
+                {
+                    AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i < 3 && j >= 3)
+            {
+                if (i == j - 3)
+                {
+                    AD->AKF.Qk[i][j] = -(0.5) * AD->AKF.sig_u * AD->AKF.sig_u * AD->AKF.dt * AD->AKF.dt;
+                }
+                else
+                {
+                    AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j < 3)
+            {
+                if (i - 3 == j)
+                {
+                    AD->AKF.Qk[i][j] = -(0.5) * AD->AKF.sig_u * AD->AKF.sig_u * AD->AKF.dt * AD->AKF.dt;
+                }
+                else
+                {
+                    AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+            else if (i >= 3 && j >= 3)
+            {
+                if (i == j)
+                {
+                    AD->AKF.Qk[i][j] = AD->AKF.sig_u * AD->AKF.sig_u * AD->AKF.dt;
+                }
+                else
+                {
+                    AD->AKF.Qk[i][j] = 0.0;
+                }
+            }
+        }
+    }
+
+    for (i = 0; i < 6; i++)
+    {
+        for (j = 0; j < 6; j++)
+        {
+            if (i == j)
+            {
+                if (i < 3)
+                {
+                    AD->AKF.Gt[i][j] = -1.0;
+                }
+                else
+                {
+                    AD->AKF.Gt[i][j] = 1.0;
+                }
+            }
+            else
+            {
+                AD->AKF.Gt[i][j] = 0.0;
+            }
+        }
+    }
+    /* Initialize covariance matrix of sensor noise, Rk(sensor) = sig(sensor)^2 * eye3 */
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &param[0], &param[1], &param[2], junk, &newline);
+    AD->AKF.sig_mag  = param[0];
+    AD->AKF.sig_sun  = param[1];
+    AD->AKF.sig_star = param[2]; /* 120 arcsec to rad */
+
+    /* Initialize bias to zer0 */
+    fscanf(in, "%lf %lf %lf%[^\n]%[\n]", &param[0], &param[1], &param[2], junk, &newline);
+    AD->AKF.bias_est[0] = param[0];
+    AD->AKF.bias_est[1] = param[1];
+    AD->AKF.bias_est[2] = param[2];
+
     // GNC
     fscanf(in, "%[^\n]%[\n]", junk, &newline);
     fscanf(in, "%lf%[^\n]%[\n]", &GNC->DT, junk, &newline);
@@ -66,14 +296,20 @@ void Generic_ADCS_init_attitude_determination_and_attitude_control(FILE *in, Gen
 }
 
 void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Generic_ADCS_DI_Tlm_Payload_t *DI,
+                                                                      Generic_ADCS_EPH_Tlm_Payload_t      *EPH,
                                                                       Generic_ADCS_AD_Tlm_Payload_t       *AD,
                                                                       Generic_ADCS_GNC_Tlm_Payload_t      *GNC,
                                                                       Generic_ADCS_AC_Tlm_Payload_t       *ACS)
 {
+    igrf(&EPH->bfld, &DI->Gps, GNC);
+    solar_ephemeris(&EPH->Sol, &DI->Gps, GNC);
     AD_imu(&DI->Imu, &AD->Imu);
     AD_mag(&DI->Mag, &AD->Mag);
-    AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
     AD_st(&DI->St, &AD->ST);
+    AD_gps(&DI->Gps, &AD->Gps);
+    AD_sol(&DI->Fss, &DI->Css, &AD->Sol);
+    AD_rateEst(*GNC, AD->Mag, AD->Sol, &AD->RateEst);
+    AD_murAKF(GNC, AD->ST, AD->Imu, AD->Mag, AD->Sol, &AD->AKF);
 
     AD_to_GNC(AD, GNC);
     for (int i = 0; i < 3; i++)
@@ -105,6 +341,337 @@ void Generic_ADCS_execute_attitude_determination_and_attitude_control(const Gene
             }
             break;
     }
+}
+
+#define MAXDEG   13
+#define MAXCOEFF (MAXDEG * (MAXDEG + 2))
+#define RAD2DEG  (180.0 / M_PI)
+
+const int   IGRF_DATE        = 2020;
+const int   IGRF_ORD         = 13;
+const int   SV_ORD           = 8;
+const float igrf_coeffs[195] = {
+    -29404.8, -1450.9, 4652.5, -2499.6, 2982,  -2991.6, 1677,   -734.6, 1363.2, -2381.2, -82.1,  1236.2, 241.9,  525.7,
+    -543.4,   903,     809.5,  281.9,   86.3,  -158.4,  -309.4, 199.7,  48,     -349.7,  -234.3, 363.2,  47.7,   187.8,
+    208.3,    -140.7,  -121.2, -151.2,  32.3,  13.5,    98.9,   66,     65.5,   -19.1,   72.9,   25.1,   -121.5, 52.8,
+    -36.2,    -64.5,   13.5,   8.9,     -64.7, 68.1,    80.6,   -76.7,  -51.5,  -8.2,    -16.9,  56.5,   2.2,    15.8,
+    23.5,     6.4,     -2.2,   -7.2,    -27.2, 9.8,     -1.8,   23.7,   9.7,    8.4,     -17.6,  -15.3,  -0.5,   12.8,
+    -21.1,    -11.7,   15.3,   14.9,    13.7,  3.6,     -16.5,  -6.9,   -0.3,   2.8,     5,      8.4,    -23.4,  2.9,
+    11,       -1.5,    9.8,    -1.1,    -5.1,  -13.2,   -6.3,   1.1,    7.8,    8.8,     0.4,    -9.3,   -1.4,   -11.9,
+    9.6,      -1.9,    -6.2,   3.4,     -0.1,  -0.2,    1.7,    3.6,    -0.9,   4.8,     0.7,    -8.6,   -0.9,   -0.1,
+    1.9,      -4.3,    1.4,    -3.4,    -2.4,  -0.1,    -3.8,   -8.8,   3,      -1.4,    0,      -2.5,   2.5,    2.3,
+    -0.6,     -0.9,    -0.4,   0.3,     0.6,   -0.7,    -0.2,   -0.1,   -1.7,   1.4,     -1.6,   -0.6,   -3,     0.2,
+    -2,       3.1,     -2.6,   -2,      -0.1,  -1.2,    0.5,    0.5,    1.3,    1.4,     -1.2,   -1.8,   0.7,    0.1,
+    0.3,      0.8,     0.5,    -0.2,    -0.3,  0.6,     -0.5,   0.2,    0.1,    -0.9,    -1.1,   0,      -0.3,   0.5,
+    0.1,      -0.9,    -0.9,   0.5,     0.6,   0.7,     1.4,    -0.3,   -0.4,   0.8,     -1.3,   0,      -0.1,   0.8,
+    0.3,      0,       -0.1,   0.4,     0.5,   0.1,     0.5,    0.5,    -0.4,   -0.5,    -0.4,   -0.4,   -0.6};
+const float igrf_sv[80] = {5.7,  7.4,  -25.9, -11,  -7,   -30.2, -2.1, -22.4, 2.2,  -5.9, 6,    3.1,  -1.1, -12,
+                           0.5,  -1.2, -1.6,  -0.1, -5.9, 6.5,   5.2,  3.6,   -5.1, -5,   -0.3, 0.5,  0,    -0.6,
+                           2.5,  0.2,  -0.6,  1.3,  3,    0.9,   0.3,  -0.5,  -0.3, 0,    0.4,  -1.6, 1.3,  -1.3,
+                           -1.4, 0.8,  0,     0,    0.9,  1,     -0.1, -0.2,  0.6,  0,    0.6,  0.7,  -0.8, 0.1,
+                           -0.2, -0.5, -1.1,  -0.8, 0.1,  0.8,   0.3,  0,     0.1,  -0.2, -0.1, 0.6,  0.4,  -0.2,
+                           -0.1, 0.5,  0.4,   -0.3, 0.3,  -0.4,  -0.1, 0.5,   0.4};
+
+float mag_coeff[MAXCOEFF]; /*Computed coefficients*/
+
+static int extrapsh(int date)
+{
+    int   nmax;
+    int   k, l;
+    int   i;
+    int   igo = IGRF_ORD, svo = SV_ORD;
+    float factor;
+    /*# of years to extrapolate */
+    factor = date - IGRF_DATE;
+    /*make shure that degree is smaller then MAXDEG */
+    if (igo > MAXDEG)
+    {
+        igo = MAXDEG;
+    }
+    if (svo > MAXDEG)
+    {
+        svo = MAXDEG;
+    }
+    /*check for equal degree*/
+    if (igo == svo)
+    {
+        k    = igo * (igo + 2);
+        nmax = igo;
+    }
+    else
+    {
+        /* check if reference is bigger */
+        if (igo > svo)
+        {
+            k = svo * (svo + 2);
+            l = igo * (igo + 2);
+            /* copy extra elements unchanged */
+            for (i = k; i < l; ++i)
+            {
+                mag_coeff[i] = igrf_coeffs[i];
+            }
+            /*maximum degree of model */
+            nmax = igo;
+        }
+        else
+        {
+            k = igo * (igo + 2);
+            l = svo * (svo + 2);
+            /*put in change for extra elements? */
+            for (i = k; i < l; ++i)
+            {
+                mag_coeff[i] = factor * igrf_sv[i];
+            }
+            nmax = svo;
+        }
+    }
+    /*apply secular variations to model */
+    for (i = 0; i < k; ++i)
+    {
+        mag_coeff[i] = igrf_coeffs[i] + factor * igrf_sv[i];
+    }
+    /* return maximum degree of model and secular variations */
+    return nmax;
+}
+
+#define PQ_BUFFSIZE 32
+
+static int igrf(Generic_ADCS_EPH_Mag_Tlm_Payload_t *bfld, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS,
+                Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+    float      slat;
+    float      clat;
+    float      ratio;
+    float      aa, bb, cc;
+    float      rr;
+    float      fm, fn;
+    float      sl[MAXDEG];
+    float      cl[MAXDEG];
+    float      p[PQ_BUFFSIZE];
+    float      q[PQ_BUFFSIZE];
+    int        i, j, k, l, m, n;
+    int        kw;
+    int        npq;
+    float      x, y, z;
+    Matrix3x3f Dcm_NEDtoECEF, Dcm_ECEFtoECIF;
+    Vector3f   dest, Bfield_ECIF, Bfield_ECEF;
+    float      PriMerAng;
+    double     GMST;
+    float      elev;
+
+    double GpsTime = GpsDateToGpsTime(2, DI_GPS->Weeks,
+                                      DI_GPS->SecondsIntoWeek); // rollover=2, valid April 7, 2019 to November 20, 2038
+    double j2000   = GpsTime - 7300.5 * 86400 + (19 + 32.184);
+    long   year, month, day, hour, minute;
+    double second;
+    TimeToDate(j2000, &year, &month, &day, &hour, &minute, &second, 0.01);
+
+    extrapsh(year);
+
+    /* Prime Meridian Calculation */
+    GMST      = JD_TO_GMST(GpsTime_TO_JD(2, DI_GPS->Weeks,
+                                         DI_GPS->SecondsIntoWeek)); // rollover=2, valid April 7, 2019 to November 20, 2038
+    PriMerAng = TWOPI * GMST;
+
+    /*calculate sin and cos of latitude */
+    slat = sin(DI_GPS->lat);
+    clat = cos(DI_GPS->lat);
+    /*prevent divide by zero */
+    if (clat < EPS16)
+    {
+        clat = EPS16;
+    }
+
+    /*calculate sin and cos of longitude */
+    sl[0] = sin(DI_GPS->lon);
+    cl[0] = cos(DI_GPS->lon);
+
+    /*initialize coordinates */
+    x = 0;
+    y = 0;
+    z = 0;
+
+    Dcm_NEDtoECEF.Comp[0][0] = -slat * cl[0];
+    Dcm_NEDtoECEF.Comp[0][1] = -sl[0];
+    Dcm_NEDtoECEF.Comp[0][2] = -clat * cl[0];
+    Dcm_NEDtoECEF.Comp[1][0] = -slat * sl[0];
+    Dcm_NEDtoECEF.Comp[1][1] = cl[0];
+    Dcm_NEDtoECEF.Comp[1][2] = -clat * sl[0];
+    Dcm_NEDtoECEF.Comp[2][0] = clat;
+    Dcm_NEDtoECEF.Comp[2][1] = 0;
+    Dcm_NEDtoECEF.Comp[2][2] = -slat;
+
+    /*calculate loop iterations */
+    npq = (bfld->nmax * (bfld->nmax + 3)) / 2;
+
+    /*calculate ratio of earths radius to elevation */
+    elev  = (DI_GPS->alt + RE) * M2KM;
+    ratio = RE * M2KM / elev;
+
+    aa = sqrt(3.0);
+
+    /*set initial values of p */
+    p[0] = 2.0 * slat;
+    p[1] = 2.0 * clat;
+    p[2] = 4.5 * slat * slat - 1.5;
+    p[3] = 3.0 * aa * clat * slat;
+
+    /*Set initial values of q */
+    q[0] = -clat;
+    q[1] = slat;
+    q[2] = -3.0 * clat * slat;
+    q[3] = aa * (slat * slat - clat * clat);
+
+    for (k = 0, l = 1, n = 0, m = 0, rr = ratio * ratio; k < npq; k++, m++)
+    {
+        /*testing get wrapped idx */
+        kw = k % PQ_BUFFSIZE;
+        if (n <= m)
+        {
+            m = -1;
+            n += 1;
+            /*rr = pow(ratio,n+2); */
+            rr *= ratio;
+            fn = n;
+        }
+        fm = m + 1;
+        if (k >= 4)
+        {
+            j = k - n;
+            /*wrap j for smaller array */
+            j = j % PQ_BUFFSIZE;
+            if (m + 1 == n)
+            {
+                aa    = sqrt(1.0 - 0.5 / fm);
+                p[kw] = (1.0 + 1.0 / fm) * aa * clat * p[j - 1];
+                q[kw] = aa * (clat * q[j - 1] + slat / fm * p[j - 1]);
+                sl[m] = sl[m - 1] * cl[0] + cl[m - 1] * sl[0];
+                cl[m] = cl[m - 1] * cl[0] - sl[m - 1] * sl[0];
+            }
+            else
+            {
+                aa = sqrt(fn * fn - fm * fm);
+                bb = sqrt(((fn - 1.0) * (fn - 1.0)) - (fm * fm)) / aa;
+                cc = (2.0 * fn - 1.0) / aa;
+                i  = k - 2 * n + 1;
+                /*wrap i for smaller array */
+                i     = i % PQ_BUFFSIZE;
+                p[kw] = (fn + 1.0) * (cc * slat / fn * p[j] - bb / (fn - 1.0) * p[i]);
+                q[kw] = cc * (slat * q[j] - clat / fn * p[j]) - bb * q[i];
+            }
+        }
+        aa = rr * mag_coeff[l - 1];
+
+        if (m == -1)
+        {
+            x = x + aa * q[kw];
+            z = z - aa * p[kw];
+            l += 1;
+        }
+        else
+        {
+            bb = rr * mag_coeff[l];
+            cc = aa * cl[m] + bb * sl[m];
+            x  = x + cc * q[kw];
+            z  = z - cc * p[kw];
+            if (clat > 0)
+            {
+                y = y + (aa * sl[m] - bb * cl[m]) * fm * p[kw] / ((fn + 1.0) * clat);
+            }
+            else
+            {
+                y = y + (aa * sl[m] - bb * cl[m]) * q[kw] * slat;
+            }
+            l += 2;
+        }
+    }
+
+    /*set destination values */
+    dest.Comp[0] = x;
+    dest.Comp[1] = y;
+    dest.Comp[2] = z;
+    Matrix3x3f_MultVec(&Bfield_ECEF, &Dcm_NEDtoECEF, &dest);
+
+    Dcm_ECEFtoECIF.Comp[0][0] = cos(PriMerAng);
+    Dcm_ECEFtoECIF.Comp[0][1] = -sin(PriMerAng);
+    Dcm_ECEFtoECIF.Comp[0][2] = 0;
+    Dcm_ECEFtoECIF.Comp[1][0] = sin(PriMerAng);
+    Dcm_ECEFtoECIF.Comp[1][1] = cos(PriMerAng);
+    Dcm_ECEFtoECIF.Comp[1][2] = 0;
+    Dcm_ECEFtoECIF.Comp[2][0] = 0;
+    Dcm_ECEFtoECIF.Comp[2][1] = 0;
+    Dcm_ECEFtoECIF.Comp[2][2] = 1;
+
+    Matrix3x3f_MultVec(&Bfield_ECIF, &Dcm_ECEFtoECIF, &Bfield_ECEF);
+
+    GNC->Bfield_ECIF[0] = Bfield_ECIF.Comp[0] * NANO2TSLA;
+    GNC->Bfield_ECIF[1] = Bfield_ECIF.Comp[1] * NANO2TSLA;
+    GNC->Bfield_ECIF[2] = Bfield_ECIF.Comp[2] * NANO2TSLA;
+
+    GNC->Bfield_ECEF[0] = Bfield_ECEF.Comp[0] * NANO2TSLA;
+    GNC->Bfield_ECEF[1] = Bfield_ECEF.Comp[1] * NANO2TSLA;
+    GNC->Bfield_ECEF[2] = Bfield_ECEF.Comp[2] * NANO2TSLA;
+
+    GNC->Bfield_NED[0] = x * NANO2TSLA;
+    GNC->Bfield_NED[1] = y * NANO2TSLA;
+    GNC->Bfield_NED[2] = z * NANO2TSLA;
+
+    return 0;
+}
+
+static int32_t solar_ephemeris(Generic_ADCS_EPH_Sol_Tlm_Payload_t *sol, Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS,
+                               Generic_ADCS_GNC_Tlm_Payload_t *GNC)
+{
+    /*float Date_Julian, Date_Solar; */
+    double Date_Solar;
+    double g, g_rad;
+    double Long_Ecliptic;
+    double Sin_Long_Ecliptic;
+    double Unit_Sun_GciF[3];
+    double h[3];
+    double b;
+    double PosN[3];
+    double VelN[3];
+
+    Date_Solar = GpsTime_TO_JD(2, DI_GPS->Weeks, DI_GPS->SecondsIntoWeek) -
+                 sol->date_epoch; // rollover=2, valid April 7, 2019 to November 20, 2038
+
+    g     = sol->coeff_G1 + sol->coeff_G2 * (double)Date_Solar;
+    g_rad = g * D2R;
+
+    Long_Ecliptic =
+        sol->coeff_L1 + sol->coeff_l2 * Date_Solar + sol->coeff_long1 * sin(g_rad) + sol->coeff_long2 * sin(2 * g_rad);
+
+    Sin_Long_Ecliptic = sin(Long_Ecliptic * D2R);
+    Unit_Sun_GciF[0]  = cos(Long_Ecliptic * D2R);
+    Unit_Sun_GciF[1]  = sol->cos_obliq_eclp * Sin_Long_Ecliptic;
+    Unit_Sun_GciF[2]  = sol->sin_obliq_eclp * Sin_Long_Ecliptic;
+
+    GNC->svn[0] = Unit_Sun_GciF[0];
+    GNC->svn[1] = Unit_Sun_GciF[1];
+    GNC->svn[2] = Unit_Sun_GciF[2];
+
+    /*Calcualte number of elapsed days since Epoch of J2000 and corresponding angle of rotation*/
+    double GMST      = JD_TO_GMST(Date_Solar);
+    double PriMerAng = TWOPI * GMST;
+    double ZAxis[3]  = {0.0, 0.0, 1.0};
+    double C_W_TETE[3][3], C_TETE_J2000[3][3], C_ECEF_ECI[3][3];
+    HiFiEarthPrecNute(Date_Solar, C_TETE_J2000);
+    SimpRot(ZAxis, PriMerAng, C_W_TETE);
+    MxM(C_W_TETE, C_TETE_J2000, C_ECEF_ECI);
+    double PosW[3] = {DI_GPS->ECEFX, DI_GPS->ECEFY, DI_GPS->ECEFZ};
+    double VelW[3] = {DI_GPS->VelX, DI_GPS->VelY, DI_GPS->VelZ};
+
+    /* Solar beta angle */
+    MxV(C_ECEF_ECI, PosW, PosN);
+    MxV(C_ECEF_ECI, VelW, VelN);
+
+    VxV(PosN, VelN, h);
+    UNITV(h);
+    b         = Limit(VoV(GNC->svn, h), -1.0, 1.0);
+    GNC->beta = asin(b);
+
+    return 0;
 }
 
 static void AD_imu(const Generic_ADCS_DI_Imu_Tlm_Payload_t *DI_IMU, Generic_ADCS_AD_Imu_Tlm_Payload_t *AD_IMU)
@@ -203,6 +770,641 @@ static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD
     {
         st->Valid = false;
     }
+}
+
+static void AD_gps(const Generic_ADCS_DI_Gps_Tlm_Payload_t *DI_GPS, Generic_ADCS_AD_Gps_Tlm_Payload_t *gps)
+{
+    gps->Weeks           = DI_GPS->Weeks;
+    gps->SecondsIntoWeek = DI_GPS->SecondsIntoWeek;
+    gps->Fractions       = DI_GPS->Fractions;
+    gps->ECEFX           = DI_GPS->ECEFX;
+    gps->ECEFY           = DI_GPS->ECEFY;
+    gps->ECEFZ           = DI_GPS->ECEFZ;
+    gps->VelX            = DI_GPS->VelX;
+    gps->VelY            = DI_GPS->VelY;
+    gps->VelZ            = DI_GPS->VelZ;
+    gps->lat             = DI_GPS->lat;
+    gps->lon             = DI_GPS->lon;
+    gps->alt             = DI_GPS->alt;
+}
+
+static void AD_rateEst(Generic_ADCS_GNC_Tlm_Payload_t GNC, Generic_ADCS_AD_Mag_Tlm_Payload_t mag,
+                       Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD)
+{
+    int           i;
+    static long   valid_counter   = 0;
+    static double w_array[100][3] = {{0}};
+    double        sum_wx          = 0.0;
+    double        sum_wy          = 0.0;
+    double        sum_wz          = 0.0;
+
+    AD->Valid = false;
+
+    for (i = 0; i < 3; i++)
+    {
+        AD->wbn[i] = 0.0;
+    }
+
+    if (sol.FssValid || mag.MagValid)
+    {
+        if (sol.FssValid && mag.MagValid)
+        {
+            if (AD->MagInit || AD->SolInit)
+            {
+                if (AD->MagInit && AD->SolInit)
+                {
+                    calc_wmag(GNC.DT, mag, AD);
+                    calc_wsol(GNC.DT, sol, AD);
+                    for (i = 0; i < 3; i++)
+                        AD->wbn[i] = AD->ws[i] + VoV(AD->wm, sol.svb) * sol.svb[i];
+                    AD->Valid = true;
+                }
+                else
+                {
+                    if (AD->MagInit)
+                    {
+                        AD->SolInit = true;
+                        calc_wmag(GNC.DT, mag, AD);
+                        for (i = 0; i < 3; i++)
+                            AD->wbn[i] = AD->wm[i];
+                        AD->Valid = true;
+                    }
+                    else /*sol is already intitialzied*/
+                    {
+                        AD->MagInit = true;
+                        calc_wsol(GNC.DT, sol, AD);
+                        for (i = 0; i < 3; i++)
+                            AD->wbn[i] = AD->ws[i];
+                        AD->Valid = true;
+                    }
+                }
+            }
+            else
+            {
+                AD->SolInit = true;
+                AD->MagInit = true;
+            }
+        }
+        else
+        {
+            if (sol.FssValid)
+            {
+                AD->MagInit = false;
+                if (AD->SolInit)
+                {
+                    calc_wsol(GNC.DT, sol, AD);
+                    for (i = 0; i < 3; i++)
+                        AD->wbn[i] = AD->ws[i];
+                    AD->Valid = true;
+                }
+                else
+                {
+                    AD->SolInit = true;
+                }
+            }
+            else /*Mag has to be valid*/
+            {
+                AD->SolInit = false;
+                if (AD->MagInit)
+                {
+                    calc_wmag(GNC.DT, mag, AD);
+                    for (i = 0; i < 3; i++)
+                        AD->wbn[i] = AD->wm[i];
+                    AD->Valid = true;
+                }
+                else
+                {
+                    AD->MagInit = true;
+                }
+            }
+        }
+    }
+    else
+    {
+        AD->MagInit = false;
+        AD->SolInit = false;
+    }
+
+    /*Moving average filter applied*/
+    if (AD->enable_filter && AD->Valid)
+    {
+
+        if (valid_counter < AD->sample_size)
+        {
+            w_array[valid_counter][0] = AD->wbn[0];
+            w_array[valid_counter][1] = AD->wbn[1];
+            w_array[valid_counter][2] = AD->wbn[2];
+        }
+        else
+        {
+            for (i = 0; i < AD->sample_size - 1; i++)
+            {
+                w_array[i][0] = w_array[i + 1][0];
+                w_array[i][1] = w_array[i + 1][1];
+                w_array[i][2] = w_array[i + 1][2];
+            }
+            w_array[AD->sample_size - 1][0] = AD->wbn[0];
+            w_array[AD->sample_size - 1][1] = AD->wbn[1];
+            w_array[AD->sample_size - 1][2] = AD->wbn[2];
+
+            for (i = 0; i < AD->sample_size; i++)
+            {
+                sum_wx = sum_wx + w_array[i][0];
+                sum_wy = sum_wy + w_array[i][1];
+                sum_wz = sum_wz + w_array[i][2];
+            }
+            AD->wbn[0] = sum_wx / AD->sample_size;
+            AD->wbn[1] = sum_wy / AD->sample_size;
+            AD->wbn[2] = sum_wz / AD->sample_size;
+        }
+
+        valid_counter = valid_counter + 1;
+    }
+    else
+    {
+        valid_counter = 0.0;
+    }
+
+    /*Update previous states*/
+    for (i = 0; i < 3; i++)
+    {
+        AD->svb_prev[i] = sol.svb[i];
+        AD->bvb_prev[i] = mag.bvb[i];
+    }
+}
+
+static void calc_wmag(double dt, Generic_ADCS_AD_Mag_Tlm_Payload_t mag, Generic_AD_rateEst_Tlm_Payload_t *AD)
+{
+
+    double bvb[3] = {0}, bvb_prev[3] = {0}, ang = 0.0, axis[3] = {0}, rate = 0.0;
+
+    int i;
+    for (i = 0; i < 3; i++)
+    {
+        bvb[i]      = mag.bvb[i];
+        bvb_prev[i] = AD->bvb_prev[i];
+    }
+    UNITV(bvb);
+    UNITV(bvb_prev);
+    ang = arccos(VoV(bvb, bvb_prev));
+    VxV(bvb, bvb_prev, axis);
+    if (MAGV(axis) > 1.0e-10)
+    {
+        UNITV(axis);
+    }
+    rate = ang / dt;
+    for (i = 0; i < 3; i++)
+    {
+        AD->wm[i] = rate * axis[i];
+    }
+}
+
+static void calc_wsol(double dt, Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_AD_rateEst_Tlm_Payload_t *AD)
+{
+
+    int    i;
+    double ang = 0.0, axis[3] = {0}, rate = 0.0;
+    ang = arccos(VoV(sol.svb, AD->svb_prev));
+    VxV(sol.svb, AD->svb_prev, axis);
+    if (MAGV(axis) > 1.0e-10)
+    {
+        UNITV(axis);
+    }
+    rate = ang / dt;
+    for (i = 0; i < 3; i++)
+    {
+        AD->ws[i] = rate * axis[i];
+    }
+}
+
+static void AD_murAKF(Generic_ADCS_GNC_Tlm_Payload_t *GNC, Generic_ADCS_AD_ST_Tlm_Payload_t st,
+                      Generic_ADCS_AD_Imu_Tlm_Payload_t imu, Generic_ADCS_AD_Mag_Tlm_Payload_t mag,
+                      Generic_ADCS_AD_Sol_Tlm_Payload_t sol, Generic_ADCS_AD_murAKF_Tlm_Payload_t *AKF)
+{
+    double west_sk[3][3] = {{0}}, wsk_sq[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    double PkPhi[6][6], PhiPkPhi[6][6];
+    double Ad[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, r_sk[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+           Hc[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, Pkm[6][6], Phi[6][6], GtQ[6][6], GQGt[6][6];
+    double PkHk[6][3],
+        HkPkHk[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, HkPkHkRk[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+        HkPkHkRk_i[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, HkT_HkPkHkRk_i[6][3], Lk[6][3], LkHk[6][6], I6_LkHk[6][6];
+
+    int snum = 1;
+
+    int        i, j;
+    int        magValid         = 0;                              /* Initialize MAG validity flag */
+    int        ResSTValid       = 0;                              /* Initialize ST residual validity flag */
+    int        ResMAGValid      = 0;                              /* Initialize MAG residual validity flag */
+    int        ResFSSValid      = 0;                              /* Initialize FSS residual validity flag */
+    double     qst[4]           = {0.0, 0.0, 0.0, 1.0};           /* Initialize ST quaternion */
+    double     qst_err[4]       = {0.0, 0.0, 0.0, 1.0};           /* Initialize ST error quaternion */
+    double     qkm_est[4]       = {0.0, 0.0, 0.0, 1.0};           /* Initialize estimated quaternion */
+    double     qdot[4]          = {0.0, 0.0, 0.0, 1.0};           /* Initialize quaternion derivative */
+    double     w_meas[3]        = {0.0, 0.0, 0.0};                /* Initialize measured rates */
+    double     w_est[3]         = {0.0, 0.0, 0.0};                /* Initialize estimated rates */
+    double     wn               = 0.0;                            /* Magnitude of estimated rates */
+    double     ek[3]            = {0.0, 0.0, 0.0};                /* Initialize residual */
+    double     sig              = 0.0;                            /* Initialize covariance */
+    double     b[3]             = {0.0, 0.0, 0.0};                /* Initialize measurement vector in the body frame */
+    double     r[3]             = {0.0, 0.0, 0.0};                /* Initialize ephemeris data */
+    double     r_est[3]         = {0.0, 0.0, 0.0};                /* Initialize estimated vector */
+    double     X3k[3]           = {0.0, 0.0, 0.0};                /* Initialize estimated state */
+    double     XiXk[4]          = {0.0, 0.0, 0.0, 0.0};           /* Initialize intermediate parameter */
+    double     delta_xkm_est[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; /* Initialize error state */
+    double     xkd2[6]          = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}; /* Initialize intermediate parameter */
+    double     xkd[3]           = {0.0, 0.0, 0.0};                /* Initialize intermediate parameter */
+    double     Hkxk[3]          = {0.0, 0.0, 0.0};                /* Initialize intermediate parameter */
+    static int StValid_prev     = 0;
+
+    for (i = 0; i < 4; i++)
+        qst[i] = st.qbn[i];
+
+    /* Initialization - Start AKF when ST is valid */
+    if (AKF->init == 1 && st.Valid == 1)
+    {
+        AKF->init = 0;
+        /* Initialize q with star tracker data if valid */
+        for (i = 0; i < 4; i++)
+        {
+            AKF->qk_est[i] = qst[i];
+        }
+        AKF->AKFvalid = 1;
+    }
+    else if (AKF->init == 1 && st.Valid == 0)
+    {
+        AKF->AKFvalid = 0;
+    }
+
+    /* Only run AKF when IMU is valid */
+    if (AKF->init == 0 && imu.valid == 1)
+    {
+        /* ------------------------Discrete Propagation -------------------------- */
+
+        /* Dynamics of Gyro bias */
+        for (i = 0; i < 3; i++)
+        {
+            /* Construct gyro model */
+            w_meas[i] = imu.wbn[i];
+            /* Gyro sampling */
+            w_est[i] = w_meas[i] - AKF->bias_est[i];
+
+            AKF->wbn[i] = w_est[i];
+        }
+
+        /* Calculate the discrete-time State Transition Matrix (Phi) */
+        skewM(w_est, west_sk);
+        wn = MAGV(w_est);
+        MxM(west_sk, west_sk, wsk_sq);
+
+        for (i = 0; i < 6; i++)
+        {
+            for (j = 0; j < 6; j++)
+            {
+                if (i < 3 && j < 3)
+                {
+                    Phi[i][j] = AKF->eye3[i][j] - west_sk[i][j] * (sin(wn * AKF->dt) / wn) +
+                                wsk_sq[i][j] * ((1 - cos(wn * AKF->dt)) / (wn * wn));
+                }
+
+                else if (i < 3 && j >= 3)
+                {
+                    Phi[i][j] = west_sk[i][j - 3] * ((1 - cos(wn * AKF->dt)) / (wn * wn)) -
+                                AKF->eye3[i][j - 3] * AKF->dt -
+                                wsk_sq[i][j - 3] * ((wn * AKF->dt - sin(wn * AKF->dt)) / (wn * wn * wn));
+                }
+                else if (i >= 3 && j < 3)
+                {
+                    Phi[i][j] = 0.0;
+                }
+                else if (i >= 3 && j >= 3)
+                {
+                    if (i == j)
+                    {
+                        Phi[i][j] = 1.0;
+                    }
+                    else
+                    {
+                        Phi[i][j] = 0.0;
+                    }
+                }
+            }
+        }
+
+        /* discrete time quaternion propagation */
+        QW2QDOT(AKF->qk_est, w_est, qdot);
+        for (i = 0; i < 4; i++)
+        {
+            qkm_est[i] = AKF->qk_est[i] + qdot[i] * AKF->dt;
+        }
+        UNITQ(qkm_est);
+
+        /* Propagate the covariance matrix (Pk-) */
+        M66xM66(AKF->Gt, AKF->Qk, GtQ);
+        M66xM66T(GtQ, AKF->Gt, GQGt);
+        M66xM66T(AKF->Pk, Phi, PkPhi);
+        M66xM66(Phi, PkPhi, PhiPkPhi);
+        for (i = 0; i < 6; i++)
+        {
+            for (j = 0; j < 6; j++)
+            {
+                Pkm[i][j] = PhiPkPhi[i][j] + GQGt[i][j];
+            }
+        }
+
+        /* -------------------------------------------------------------- */
+
+        /* ------------------ Murrell's Version: -----------------------  */
+
+        /*  Initialize to Xkm to 0 */
+        for (i = 0; i < 3; i++)
+        {
+            delta_xkm_est[i]     = 0.0;
+            delta_xkm_est[i + 3] = 0.0;
+        }
+
+        /* Get sensor data bi */
+        while (snum < 4)
+        {
+            if (snum == 1)
+            { /* Get Mag data */
+                magValid = MAGV(mag.bvb) > AKF->Mag_range;
+                if (magValid == 1)
+                {
+                    for (i = 0; i < 3; i++)
+                    {
+                        b[i] = mag.bvb[i];
+                    }
+                    sig = AKF->sig_mag;
+                }
+            }
+
+            else if (snum == 2)
+            { /* Get ST data */
+                if (st.Valid == 1)
+                {
+                    QxQT(qst, AKF->qk_est, qst_err);
+                    sig = AKF->sig_star;
+                }
+            }
+
+            else if (snum == 3)
+            { /* Get FSS data */
+                if (sol.FssValid == 1)
+                {
+                    for (i = 0; i < 3; i++)
+                    {
+                        b[i] = sol.svb[i];
+                    }
+                    sig = AKF->sig_sun;
+                }
+            }
+
+            if ((snum == 1 && magValid == 1) || (snum == 3 && sol.FssValid == 1))
+            {
+                /* Get Ephemeris data */
+                if (snum == 1)
+                {
+                    r[0] = GNC->Bfield_ECIF[0];
+                    r[1] = GNC->Bfield_ECIF[1];
+                    r[2] = GNC->Bfield_ECIF[2];
+                }
+                else if (snum == 3)
+                {
+                    r[0] = GNC->svn[0];
+                    r[1] = GNC->svn[1];
+                    r[2] = GNC->svn[2];
+                }
+
+                /* Calculate Sensitivity matrix HK = [skew(A(qm_est)*rx) zeros] */
+                Q2C(qkm_est, Ad);
+                skewM(r, r_sk);
+                MxM(Ad, r_sk, Hc);
+
+                for (i = 0; i < 3; i++)
+                {
+                    for (j = 0; j < 6; j++)
+                    {
+                        if (j < 3)
+                        {
+                            AKF->Hk[i][j] = Hc[i][j];
+                        }
+                        else
+                        {
+                            AKF->Hk[i][j] = 0.0;
+                        }
+                    }
+                }
+
+                /* Calculate Kalman gain Lk = Pkm*HkT[Hk*Pkm*HkT + Rk] */
+                M66xM36T(Pkm, AKF->Hk, PkHk);
+                M36xM63(AKF->Hk, PkHk, HkPkHk);
+                for (i = 0; i < 3; i++)
+                {
+                    for (j = 0; j < 3; j++)
+                    {
+                        HkPkHkRk[i][j] = HkPkHk[i][j] + sig * sig * AKF->eye3[i][j];
+                    }
+                }
+                MINV3(HkPkHkRk, HkPkHkRk_i);
+                M36TxM33(AKF->Hk, HkPkHkRk_i, HkT_HkPkHkRk_i);
+                M66xM63(Pkm, HkT_HkPkHkRk_i, Lk);
+
+                /* Update the covariance matrix (Pk+) = [I-Lk*Hk]*Pkm */
+                M63xM36(Lk, AKF->Hk, LkHk);
+                for (i = 0; i < 6; i++)
+                {
+                    for (j = 0; j < 6; j++)
+                    {
+                        if (i == j)
+                        {
+                            I6_LkHk[i][j] = 1.0 - LkHk[i][j];
+                        }
+                        else
+                        {
+                            I6_LkHk[i][j] = -LkHk[i][j];
+                        }
+                    }
+                }
+                M66xM66(I6_LkHk, Pkm, AKF->Pk);
+
+                /* Calculate residual ek = (bi - A(qm_est)*ri) */
+                MxV(Ad, r, r_est);
+
+                for (i = 0; i < 3; i++)
+                {
+                    ek[i] = b[i] - r_est[i];
+                }
+                /* Define FSS and Mag residual validity */
+                if (snum == 1)
+                {
+                    if (MAGV(ek) < AKF->ek_MG_bound)
+                    {
+                        ResMAGValid = 1;
+                    }
+                    else
+                    {
+                        ResMAGValid = 0;
+                    }
+                }
+                else if (snum == 3)
+                {
+                    if (MAGV(ek) < AKF->ek_FSS_bound)
+                    {
+                        ResFSSValid = 1;
+                    }
+                    else
+                    {
+                        ResFSSValid = 0;
+                    }
+                }
+            }
+
+            else if (snum == 2 && st.Valid == 1)
+            {
+                for (i = 0; i < 3; i++)
+                {
+                    for (j = 0; j < 6; j++)
+                    {
+                        if (j < 3)
+                        {
+                            AKF->Hk[i][j] = AKF->eye3[i][j];
+                        }
+                        else
+                        {
+                            AKF->Hk[i][j] = 0.0;
+                        }
+                    }
+                }
+
+                /* Calculate Kalman gain Lk = Pkm*HkT[Hk*Pkm*HkT + Rk] */
+                M66xM36T(Pkm, AKF->Hk, PkHk);
+                M36xM63(AKF->Hk, PkHk, HkPkHk);
+                for (i = 0; i < 3; i++)
+                {
+                    for (j = 0; j < 3; j++)
+                    {
+                        HkPkHkRk[i][j] = HkPkHk[i][j] + sig * sig * AKF->eye3[i][j];
+                    }
+                }
+                MINV3(HkPkHkRk, HkPkHkRk_i);
+                M36TxM33(AKF->Hk, HkPkHkRk_i, HkT_HkPkHkRk_i);
+                M66xM63(Pkm, HkT_HkPkHkRk_i, Lk);
+
+                /* Update the covariance matrix (Pk+) = [I-Lk*Hk]*Pkm */
+                M63xM36(Lk, AKF->Hk, LkHk);
+                for (i = 0; i < 6; i++)
+                {
+                    for (j = 0; j < 6; j++)
+                    {
+                        if (i == j)
+                        {
+                            I6_LkHk[i][j] = 1.0 - LkHk[i][j];
+                        }
+                        else
+                        {
+                            I6_LkHk[i][j] = -LkHk[i][j];
+                        }
+                    }
+                }
+                M66xM66(I6_LkHk, Pkm, AKF->Pk);
+
+                /* Calculate residual ek */
+                for (i = 0; i < 3; i++)
+                {
+                    ek[i] = 2 * qst_err[i];
+                }
+                /* Define ST residual validity */
+                if (MAGV(ek) < AKF->ek_ST_bound)
+                {
+                    ResSTValid = 1;
+                }
+                else
+                {
+                    ResSTValid = 0;
+                }
+            }
+
+            /* Check for negative and divergence in diagonal elements of covariance P */
+            if (st.Valid == 1 && StValid_prev == 0)
+            {
+                AKF->reset_flag = 1;
+            }
+
+            else if (st.Valid == 1)
+            {
+                for (i = 0; i < 6; i++)
+                {
+                    if (AKF->Pk[i][i] < 0.0 || AKF->Pk[i][i] >= AKF->Dvg_tol)
+                    {
+                        AKF->reset_flag = 1;
+                        break;
+                    }
+                }
+            }
+
+            /* Do an update only if residuals are valid */
+            if (((ResMAGValid == 1) && snum == 1) || ((ResSTValid == 1) && snum == 2) ||
+                ((ResFSSValid == 1) && snum == 3))
+            {
+                /* Update state delta_xk_est = delta_xkm_est + Lk[ek - Hk*delta_xkm_est] */
+                M36xV6(AKF->Hk, delta_xkm_est, Hkxk);
+                for (i = 0; i < 3; i++)
+                {
+                    xkd[i] = ek[i] - Hkxk[i];
+                }
+                M63xV3(Lk, xkd, xkd2);
+                for (i = 0; i < 6; i++)
+                {
+                    AKF->delta_xk_est[i] = delta_xkm_est[i] + xkd2[i];
+                    if (i < 3)
+                    {
+                        X3k[i] = AKF->delta_xk_est[i];
+                    }
+                    delta_xkm_est[i] = AKF->delta_xk_est[i];
+                    /*  delta_xkm_est[i] = 0.0; */ /* Uncomment this line if running only one sensor, ignore for
+                                                      multiple sensors */
+                }
+                for (i = 0; i < 6; i++)
+                {
+                    for (j = 0; j < 6; j++)
+                    {
+                        Pkm[i][j] = AKF->Pk[i][j];
+                    }
+                }
+
+                /* Update quaternion estimate */
+                QW2QDOT(qkm_est, X3k, XiXk);
+                for (i = 0; i < 4; i++)
+                {
+                    AKF->qk_est[i] = qkm_est[i] + XiXk[i];
+                }
+                UNITQ(AKF->qk_est);
+
+                /* Update bias estimate */
+                for (i = 0; i < 3; i++)
+                {
+                    AKF->bias_est[i] = AKF->bias_est[i] + delta_xkm_est[i + 3];
+                }
+                AKF->AKFvalid = 1;
+            }
+            else if ((ResSTValid == 0) && (ResMAGValid == 0) && (ResFSSValid == 0))
+            {
+                AKF->AKFvalid = 0;
+            }
+            snum++;
+        }
+
+        for (i = 0; i < 4; i++)
+        {
+            AKF->qbn[i] = AKF->qk_est[i];
+        }
+    }
+    else if (AKF->init == 0 && imu.valid == 0)
+    {
+        AKF->AKFvalid = 0;
+    }
+
+    StValid_prev = st.Valid;
 }
 
 static void AD_to_GNC(const Generic_ADCS_AD_Tlm_Payload_t *AD, Generic_ADCS_GNC_Tlm_Payload_t *GNC)

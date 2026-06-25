@@ -36,6 +36,7 @@ namespace Components {
     public:
 
     Generic_ADCS_Hk_tlm_t  HkTelemetryPkt; /* GENERIC_ADCS Housekeeping Telemetry Packet */
+    Generic_ADCS_EPH_Tlm_t EPHPacket;
     Generic_ADCS_DI_Tlm_t  DIPacket;
     Generic_ADCS_AD_Tlm_t  ADPacket;
     Generic_ADCS_GNC_Tlm_t GNCPacket;
@@ -50,6 +51,7 @@ namespace Components {
     U32 ingestCSSCount = 0;
     U32 ingestRWCount = 0;
     U32 ingestSTCount = 0;
+    U32 ingestGPSCount = 0;
     U32 ingestPASSIVE = 0;
     U32 ingestSUNSAFE = 0;
     U32 ingestINERTIAL = 0;
@@ -128,6 +130,22 @@ namespace Components {
         U8 IsValid
       ) override;
 
+      void GPSin_handler(
+        FwIndexType portNum,
+        I16 Weeks,
+        U32 SecondsIntoWeek,
+        F64 Fractions,
+        F64 ECEFX,
+        F64 ECEFY,
+        F64 ECEFZ,
+        F64 VelX,
+        F64 VelY,
+        F64 VelZ,
+        F64 lat,
+        F64 lon,
+        F64 alt
+      ) override;
+
       void updateData_handler(
         const FwIndexType portNum,
         U32 context
@@ -172,9 +190,10 @@ namespace Components {
       //refactor everything below eventually
 
       void ingest_init(Generic_ADCS_DI_Tlm_Payload_t *DI);
-      void init_adac(Generic_ADCS_AD_Tlm_Payload_t *AD,
-                          Generic_ADCS_GNC_Tlm_Payload_t *GNC,
-                          Generic_ADCS_AC_Tlm_Payload_t  *ACS);
+      void init_adac(Generic_ADCS_EPH_Tlm_Payload_t *EPH,
+                     Generic_ADCS_AD_Tlm_Payload_t *AD,
+                     Generic_ADCS_GNC_Tlm_Payload_t *GNC,
+                     Generic_ADCS_AC_Tlm_Payload_t  *ACS);
       
       void init_output(Generic_ADCS_DO_Tlm_Payload_t *DO);
 

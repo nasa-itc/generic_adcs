@@ -36,6 +36,9 @@ module Components {
         @ ST Data input
         async input port STin: STDataPort
 
+        @ GPS Data input
+        async input port GPSin: GPSDataPort
+
         @ Update Control and Cmd Outputs
         async input port updateData: Svc.Sched
 
@@ -90,6 +93,9 @@ module Components {
 
         @ Counter for keeping track of ST updating
         telemetry ingestSTCount: U32
+
+        @ Counter for keeping track of GPS updating
+        telemetry ingestGPSCount: U32
 
         @ ADCS Current Mode
         telemetry ADCSMode: adcs_mode

@@ -5,6 +5,7 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <math.h>
 #include "generic_adcs_utilities.h"
 #include "generic_adcs_ingest.h"
@@ -175,4 +176,22 @@ void Generic_ADCS_ingest_generic_st(double Q0, double Q1, double Q2, double Q3, 
     St->valid   = IsValid;
     double q[4] = {Q0, Q1, Q2, Q3};
     QxQ(q, St->qbs, St->q);
+}
+
+void Generic_ADCS_ingest_novatel_gps(uint16_t Weeks, uint32_t SecondsIntoWeek, double Fractions, double ECEFX,
+                                     double ECEFY, double ECEFZ, double VelX, double VelY, double VelZ, double lat,
+                                     double lon, double alt, Generic_ADCS_DI_Gps_Tlm_Payload_t *Gps)
+{
+    Gps->Weeks           = Weeks;
+    Gps->SecondsIntoWeek = SecondsIntoWeek;
+    Gps->Fractions       = Fractions;
+    Gps->ECEFX           = ECEFX;
+    Gps->ECEFY           = ECEFY;
+    Gps->ECEFZ           = ECEFZ;
+    Gps->VelX            = VelX;
+    Gps->VelY            = VelY;
+    Gps->VelZ            = VelZ;
+    Gps->lat             = lat;
+    Gps->lon             = lon;
+    Gps->alt             = alt;
 }
