@@ -1,14 +1,18 @@
 # Library for GENERIC_ADCS Target
-from openc3.script import *
-import time
+from openc3.script import cmd, tlm, check, wait_check, wait_check_packet, wait_check_tolerance, wait_check_expression, check_tolerance
 import math
-# import generic_css_lib
-# import generic_fss_lib
-# import generic_imu_lib
-# import generic_mag_lib
-# import generic_reaction_wheel_lib
-# import generic_st_lib
-# import gps_lib
+import time
+
+try:
+    from nos3.generic_eps_lib import eps_cmd
+    from nos3.generic_css_lib import get_generic_css_data
+    from nos3.generic_fss_lib import get_fss_data, get_fss_hk
+    from nos3.generic_imu_lib import get_generic_imu_data, get_generic_imu_hk
+    from nos3.generic_mag_lib import get_generic_mag_data, get_generic_mag_hk
+    from nos3.generic_reaction_wheel_lib import get_GENERIC_REACTION_WHEEL_data
+    from nos3.generic_st_lib import get_generic_star_tracker_data, get_generic_star_tracker_hk
+except ImportError:
+    pass
 
 #
 # Definitions
@@ -40,23 +44,26 @@ def get_adcs_data():
     wait_check_packet("GENERIC_ADCS", "GENERIC_ADCS_DO", 1, GENERIC_ADCS_RESPONSE_TIMEOUT)
     time.sleep(GENERIC_ADCS_CMD_SLEEP)
 
-def adcs_cmd(*command):
+def adcs_cmd(command_string):
     count = tlm("GENERIC_ADCS GENERIC_ADCS_HK_TLM CMD_COUNT") + 1
 
     if (count == 256):
         count = 0
 
-    cmd(*command)
+    cmd(command_string)    
+    get_adcs_hk()
     get_adcs_hk()
     current = tlm("GENERIC_ADCS GENERIC_ADCS_HK_TLM CMD_COUNT")
     if (current != count):
         # Try again
-        cmd(*command)
+        cmd(command_string)    
+        get_adcs_hk()
         get_adcs_hk()
         current = tlm("GENERIC_ADCS GENERIC_ADCS_HK_TLM CMD_COUNT")
         if (current != count):
             # Third times the charm
-            cmd(*command)
+            cmd(command_string)  
+            get_adcs_hk()
             get_adcs_hk()
             current = tlm("GENERIC_ADCS GENERIC_ADCS_HK_TLM CMD_COUNT")
             
