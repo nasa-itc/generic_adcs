@@ -5,10 +5,10 @@ import time
 
 try:
     from nos3.generic_eps_lib import eps_cmd
-    from nos3.generic_css_lib import get_generic_css_data
-    from nos3.generic_fss_lib import get_fss_data, get_fss_hk
-    from nos3.generic_imu_lib import get_generic_imu_data, get_generic_imu_hk
-    from nos3.generic_mag_lib import get_generic_mag_data, get_generic_mag_hk
+    from nos3.generic_css_lib import get_generic_css_data, GENERIC_CSS_DEVICE_TRUTH_MARGIN
+    from nos3.generic_fss_lib import get_fss_data, get_fss_hk, GENERIC_FSS_RESPONSE_TIMEOUT
+    from nos3.generic_imu_lib import get_generic_imu_data, get_generic_imu_hk, GENERIC_IMU_DEVICE_ANGULAR_DIFF, GENERIC_IMU_DEVICE_LINEAR_DIFF
+    from nos3.generic_mag_lib import get_generic_mag_data, get_generic_mag_hk, GENERIC_MAG_DEVICE_NT_DIFFERENCE
     from nos3.generic_reaction_wheel_lib import get_GENERIC_REACTION_WHEEL_data
     from nos3.generic_st_lib import get_generic_star_tracker_data, get_generic_star_tracker_hk
 except ImportError:
@@ -19,7 +19,7 @@ except ImportError:
 #
 GENERIC_ADCS_CMD_SLEEP = 0.25
 GENERIC_ADCS_RESPONSE_TIMEOUT = 5
-GENERIC_ADCS_MODE_CHECK_TIMEOUT = 240
+GENERIC_ADCS_MODE_CHECK_TIMEOUT = 600
 GENERIC_ADCS_TEST_LOOP_COUNT = 1
 GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
 
