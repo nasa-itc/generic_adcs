@@ -126,7 +126,7 @@ def safe_adcs():
 
     sw1_state = tlm("GENERIC_EPS_DEBUG GENERIC_EPS_HK_TLM SWITCH_1_STATE")
     if(sw1_state == "OFF"):
-        eps_cmd("GENERIC_EPS_DEBUG GENERIC_EPS_SWITCH_CC with SWITCH_NUMBER SWITCH_1, STATE ON")
+        cmd("GENERIC_EPS_DEBUG GENERIC_EPS_SWITCH_CC with SWITCH_NUMBER SWITCH_1, STATE ON")
 
         time.sleep(0.5)
 
