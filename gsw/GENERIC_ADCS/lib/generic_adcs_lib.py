@@ -17,8 +17,8 @@ except ImportError:
 #
 # Definitions
 #
-GENERIC_ADCS_CMD_SLEEP = 0.25
-GENERIC_ADCS_RESPONSE_TIMEOUT = 5
+GENERIC_ADCS_CMD_SLEEP = 1.0
+GENERIC_ADCS_RESPONSE_TIMEOUT = 15
 GENERIC_ADCS_MODE_CHECK_TIMEOUT = 600
 GENERIC_ADCS_TEST_LOOP_COUNT = 1
 GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
@@ -27,9 +27,17 @@ GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
 # Functions
 #
 def get_adcs_hk():
-    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_REQ_HK")
-    wait_check_packet("GENERIC_ADCS_DEBUG", "GENERIC_ADCS_HK_TLM", 1, GENERIC_ADCS_RESPONSE_TIMEOUT)
-    time.sleep(GENERIC_ADCS_CMD_SLEEP)
+    for attempt in range(3):
+        cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_REQ_HK")
+        try:
+            wait_check_packet("GENERIC_ADCS_DEBUG", "GENERIC_ADCS_HK_TLM", 1, GENERIC_ADCS_RESPONSE_TIMEOUT)
+            time.sleep(GENERIC_ADCS_CMD_SLEEP)
+            return
+        except Exception as e:
+            if attempt == 2:
+                raise e
+            else:
+                print(f"ADCS HK dropped, retrying... (Attempt {attempt + 2})")
 
 def get_adcs_data():
     cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SEND_DI_CC")
@@ -50,48 +58,40 @@ def adcs_cmd(command_string):
     if (count == 256):
         count = 0
 
-    cmd(command_string)    
-    get_adcs_hk()
-    get_adcs_hk()
-    current = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT")
-    if (current != count):
-        # Try again
-        cmd(command_string)    
-        get_adcs_hk()
-        get_adcs_hk()
-        current = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT")
-        if (current != count):
-            # Third times the charm
-            cmd(command_string)  
-            get_adcs_hk()
+    for attempt in range(3):
+            cmd(command_string)    
             get_adcs_hk()
             current = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT")
-            
-    check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT >= {count}")
+            if (current == count):
+                break
+            else:
+                time.sleep(1)
+                
+    check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT >= {count}", GENERIC_ADCS_RESPONSE_TIMEOUT)
 
 def adcs_sunsafe():
 
-    adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE SUNSAFE_MODE")
+    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE SUNSAFE_MODE")
 
 
 def adcs_bdot():
 
-    adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE BDOT_MODE")
+    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE BDOT_MODE")
 
 
 def adcs_inertial():
 
-    adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE INERTIAL_MODE")
+    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE INERTIAL_MODE")
 
 
 def adcs_passive():
 
-    adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE PASSIVE")
+    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_SET_MODE_CC with GNC_MODE PASSIVE")
 
 
 def adcs_set_q():
 
-    adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0, GNC_INER_QUAT2 0.0, GNC_INER_QUAT3 0.0, GNC_INER_QUAT4 1.0")
+    cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_INERTIAL_QUATERNION_CC with GNC_INER_QUAT1 0.0, GNC_INER_QUAT2 0.0, GNC_INER_QUAT3 0.0, GNC_INER_QUAT4 1.0")
 
 
 def safe_adcs():
@@ -101,44 +101,62 @@ def safe_adcs():
     if (fss_enabled != "ENABLED"):
         cmd("GENERIC_FSS_DEBUG GENERIC_FSS_ENABLE_CC")
 
+        time.sleep(0.5)
+
     cmd("GENERIC_CSS_DEBUG GENERIC_CSS_REQ_HK")
     css_enabled = tlm("GENERIC_CSS_DEBUG GENERIC_CSS_HK_TLM DEVICE_ENABLED")
     if (css_enabled != "ENABLED"):
         cmd("GENERIC_CSS_DEBUG GENERIC_CSS_ENABLE_CC")
+
+        time.sleep(0.5) 
 
     cmd("GENERIC_IMU_DEBUG GENERIC_IMU_REQ_HK")
     imu_enabled = tlm("GENERIC_IMU_DEBUG GENERIC_IMU_HK_TLM DEVICE_ENABLED")
     if (imu_enabled != "ENABLED"):
         cmd("GENERIC_IMU_DEBUG GENERIC_IMU_ENABLE_CC")
 
+        time.sleep(0.5)
+
     cmd("GENERIC_MAG_DEBUG GENERIC_MAG_REQ_HK")
     mag_enabled = tlm("GENERIC_MAG_DEBUG GENERIC_MAG_HK_TLM DEVICE_ENABLED")
     if (mag_enabled != "ENABLED"):
         cmd("GENERIC_MAG_DEBUG GENERIC_MAG_ENABLE_CC")
 
+        time.sleep(0.5)
+
     sw1_state = tlm("GENERIC_EPS_DEBUG GENERIC_EPS_HK_TLM SWITCH_1_STATE")
     if(sw1_state == "OFF"):
         eps_cmd("GENERIC_EPS_DEBUG GENERIC_EPS_SWITCH_CC with SWITCH_NUMBER SWITCH_1, STATE ON")
+
+        time.sleep(0.5)
 
     cmd("GENERIC_STAR_TRACKER_DEBUG GENERIC_STAR_TRACKER_REQ_HK")
     st_enabled = tlm("GENERIC_STAR_TRACKER_DEBUG GENERIC_STAR_TRACKER_HK_TLM DEVICE_ENABLED")
     if (st_enabled != "ENABLED"):
         cmd("GENERIC_STAR_TRACKER_DEBUG GENERIC_STAR_TRACKER_ENABLE_CC")
 
+        time.sleep(0.5)
+
     cmd("NOVATEL_OEM615_DEBUG NOVATEL_OEM615_REQ_HK")
     gps_enabled = tlm("NOVATEL_OEM615_DEBUG NOVATEL_OEM615_HK_TLM DEVICE_ENABLED")
     if (gps_enabled != "ENABLED"):
         cmd("NOVATEL_OEM615_DEBUG NOVATEL_OEM615_ENABLE_CC")
+
+        time.sleep(0.5)
 
     cmd("GENERIC_TORQUER_DEBUG GENERIC_TORQUER_REQ_HK_CC")
     torquer_enabled = tlm("GENERIC_TORQUER_DEBUG GENERIC_TORQUER_HK_TLM_T DEVICE_ENABLED")
     if (torquer_enabled != "ENABLED"):
         cmd("GENERIC_TORQUER_DEBUG GENERIC_TORQUER_ENABLE_CC")
 
+        time.sleep(0.5)
+
     get_adcs_data()
     mode = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_GNC MODE")
     if (mode != "SUNSAFE"):
         adcs_sunsafe()
+
+        time.sleep(0.5)
 
 
 def confirm_adcs_data():

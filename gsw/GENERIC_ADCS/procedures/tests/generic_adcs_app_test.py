@@ -5,7 +5,7 @@ for p in glob.glob('/gems/gems/openc3-cosmos-nos3-*/targets/GENERIC_ADCS/scripts
     if p not in sys.path:
         sys.path.append(p)
 
-from openc3.script import cmd, tlm, check
+from openc3.script import cmd, tlm, check, wait_check
 from nos3.generic_adcs_lib import *
 
 ##
@@ -40,8 +40,8 @@ def run_generic_adcs_app_test():
         adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_NOOP_CC")
         cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_RST_COUNTERS_CC") # Note standard `cmd` as we can't reset counters and then confirm increment
         get_adcs_hk()
-        check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == 0")
-        check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == 0")
+        wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == 0", 15)
+        wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == 0", 15)
 
     ##
     ##   Invalid ground command, confirm bad lengths and codes are rejected
