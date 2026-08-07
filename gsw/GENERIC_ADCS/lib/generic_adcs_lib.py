@@ -1,5 +1,5 @@
 # Library for GENERIC_ADCS_DEBUG Target
-from openc3.script import cmd, tlm, check, wait_check, wait_check_packet, wait_check_tolerance, wait_check_expression, check_tolerance
+from openc3.script import cmd, tlm, check, wait_check, wait_check_packet, wait_check_tolerance, wait_check_expression, check_tolerance, check_expression
 import math
 import time
 
@@ -19,7 +19,7 @@ except ImportError:
 #
 GENERIC_ADCS_CMD_SLEEP = 1.0
 GENERIC_ADCS_RESPONSE_TIMEOUT = 15
-GENERIC_ADCS_MODE_CHECK_TIMEOUT = 600
+GENERIC_ADCS_MODE_CHECK_TIMEOUT = 20
 GENERIC_ADCS_TEST_LOOP_COUNT = 1
 GENERIC_ADCS_DEVICE_LOOP_COUNT = 5
 
@@ -193,16 +193,17 @@ def confirm_adcs_data():
     adcs_set_q()
 
     time.sleep(GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    get_adcs_data()
 
     qbn0 = abs(tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_GNC QBN_0"))
     qbn1 = abs(tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_GNC QBN_1"))
     qbn2 = abs(tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_GNC QBN_2"))
     qbn3 = abs(tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_GNC QBN_3"))
 
-    wait_check_expression(f"{qbn0} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression(f"{qbn1} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression(f"{qbn2} < 0.1", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
-    wait_check_expression(f"{qbn3} > 0.9", GENERIC_ADCS_MODE_CHECK_TIMEOUT)
+    check_expression(f"{qbn0} < 0.1")
+    check_expression(f"{qbn1} < 0.1")
+    check_expression(f"{qbn2} < 0.1")
+    check_expression(f"{qbn3} > 0.9")
 
     get_adcs_hk()
 
