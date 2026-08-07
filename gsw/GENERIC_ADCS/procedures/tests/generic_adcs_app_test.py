@@ -1,5 +1,6 @@
 import sys
 import glob
+import time
 
 for p in glob.glob('/gems/gems/openc3-cosmos-nos3-*/targets/GENERIC_ADCS/scripts'):
     if p not in sys.path:
@@ -26,6 +27,7 @@ def run_generic_adcs_app_test():
     ##
     for n in range(GENERIC_ADCS_TEST_LOOP_COUNT):
         get_adcs_hk()
+        time.sleep(1)
 
     ##
     ## NOOP, no operation but confirm correct counters increment
@@ -40,6 +42,7 @@ def run_generic_adcs_app_test():
         adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_NOOP_CC")
         cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_RST_COUNTERS_CC") # Note standard `cmd` as we can't reset counters and then confirm increment
         get_adcs_hk()
+        time.sleep(1)
         wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == 0", 15)
         wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == 0", 15)
 
@@ -51,6 +54,7 @@ def run_generic_adcs_app_test():
         cmd_cnt = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT")
         cmd_err_cnt = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT")
         cmd(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_NOOP_CC with CCSDS_LENGTH {n+2}") # Note +2 due to CCSDS already being +1
+        time.sleep(1)
         get_adcs_hk()
         # check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == {cmd_cnt}")
         # check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == {cmd_err_cnt+1}")
@@ -61,6 +65,7 @@ def run_generic_adcs_app_test():
         cmd_cnt = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT")
         cmd_err_cnt = tlm("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT")
         cmd(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_NOOP_CC with CCSDS_FC {n+1}")
+        time.sleep(1)
         get_adcs_hk()
         # check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == {cmd_cnt}")
         # check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == {cmd_err_cnt+1}")
