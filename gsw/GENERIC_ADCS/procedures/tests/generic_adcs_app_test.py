@@ -42,9 +42,8 @@ def run_generic_adcs_app_test():
         adcs_cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_NOOP_CC")
         cmd("GENERIC_ADCS_DEBUG GENERIC_ADCS_RST_COUNTERS_CC") # Note standard `cmd` as we can't reset counters and then confirm increment
         get_adcs_hk()
-        time.sleep(1)
-        wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == 0", 15)
-        wait_check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == 0", 15)
+        check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT == 0")
+        check("GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_ERR_COUNT == 0")
 
     ##
     ##   Invalid ground command, confirm bad lengths and codes are rejected
