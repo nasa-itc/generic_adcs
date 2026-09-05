@@ -2,7 +2,12 @@
 from openc3.script import cmd, tlm, check, wait_check, wait_check_packet, wait_check_tolerance, wait_check_expression, check_tolerance, check_expression
 import math
 import time
+import sys
+import glob
 
+for p in glob.glob('/gems/gems/openc3-cosmos-nos3-*/targets/*/scripts'):
+    if p not in sys.path:
+        sys.path.append(p)
 try:
     from nos3.generic_eps_lib import eps_cmd
     from nos3.generic_css_lib import get_generic_css_data, GENERIC_CSS_DEVICE_TRUTH_MARGIN
