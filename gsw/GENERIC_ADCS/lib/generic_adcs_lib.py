@@ -67,7 +67,7 @@ def adcs_cmd(command_string):
             else:
                 time.sleep(1)
                 
-    wait_check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT >= {count}")
+    check(f"GENERIC_ADCS_DEBUG GENERIC_ADCS_HK_TLM CMD_COUNT >= {count}")
 
 def adcs_sunsafe():
 
