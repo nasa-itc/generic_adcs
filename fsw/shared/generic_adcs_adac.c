@@ -757,7 +757,8 @@ static void AD_st(const Generic_ADCS_DI_St_Tlm_Payload_t *DI_ST, Generic_ADCS_AD
     if (DI_ST->valid)
     {
         valid_st_cnt = valid_st_cnt + 1;
-        QxQ(DI_ST->q, DI_ST->qbs, qST);
+        for (i = 0; i < 4; i++)
+            qST[i] = DI_ST->q[i];
     }
 
     if (valid_st_cnt > 0.0)
